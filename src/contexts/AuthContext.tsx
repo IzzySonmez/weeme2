@@ -1,23 +1,24 @@
+// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, MembershipType } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  register: (username: string, email: string, password: string) => Promise<boolean>;
-  updateCredits: (credits: number) => void;
   isLoading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
+  register: (username: string, email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  updateCredits: (credits: number) => void;     // eski API'yi koruyalım
+  addCredits: (amount: number) => void;
+  upgradeMembership: (type: MembershipType) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -26,16 +27,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Demo login - in real app, this would be an API call
+  const persist = (u: User) => {
+    setUser(u);
+    localStorage.setItem('user', JSON.stringify(u));
+  };
+
+  const login = async (username: string, password: string) => {
     if (username === 'test' && password === 'test123') {
-      const demoUser: User = {
+      const demo: User = {
         id: '1',
         username: 'test',
         email: 'test@example.com',
@@ -43,16 +46,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         credits: 3,
         createdAt: new Date().toISOString(),
       };
-      setUser(demoUser);
-      localStorage.setItem('user', JSON.stringify(demoUser));
+      persist(demo);
       return true;
     }
     return false;
   };
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
-    // Demo registration
-    const newUser: User = {
+  const register = async (username: string, email: string, password: string) => {
+    const u: User = {
       id: Date.now().toString(),
       username,
       email,
@@ -60,8 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credits: 3,
       createdAt: new Date().toISOString(),
     };
-    setUser(newUser);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    persist(u);
     return true;
   };
 
@@ -71,15 +71,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateCredits = (credits: number) => {
-    if (user) {
-      const updatedUser = { ...user, credits };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
+    if (!user) return;
+    persist({ ...user, credits });
+  };
+
+  const addCredits = (amount: number) => {
+    if (!user) return;
+    const next = { ...user, credits: Math.max(0, (user.credits ?? 0) + amount) };
+    persist(next);
+  };
+
+  const upgradeMembership = (type: MembershipType) => {
+    if (!user) return;
+    // Free -> ProSub / AdvancedSun: Free kredileri korunur (isteğe göre 0'a da çekilebilir)
+    // ProSub/AdvancedSun için krediler anlamsız, UI'da ∞ gösteriyoruz.
+    persist({ ...user, membershipType: type });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateCredits, isLoading }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateCredits, addCredits, upgradeMembership }}>
       {children}
     </AuthContext.Provider>
   );
