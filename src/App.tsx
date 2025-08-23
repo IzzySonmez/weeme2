@@ -14,7 +14,6 @@ const AppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [billingOpen, setBillingOpen] = useState(false);
 
-  // Aktif sekmeyi localStorage’da tutalım (sayfa yenileyince hatırlasın)
   useEffect(() => {
     const saved = localStorage.getItem('activeTab');
     if (saved === 'dashboard' || saved === 'suggestions' || saved === 'ai-content') {
@@ -25,18 +24,8 @@ const AppInner: React.FC = () => {
     localStorage.setItem('activeTab', activeTab);
   }, [activeTab]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen grid place-items-center text-gray-600">
-        Yükleniyor…
-      </div>
-    );
-  }
-
-  // Giriş ekranı
-  if (!user) {
-    return <Login />;
-  }
+  if (isLoading) return <div className="min-h-screen grid place-items-center text-gray-600">Yükleniyor…</div>;
+  if (!user) return <Login />;
 
   return (
     <>
@@ -44,12 +33,9 @@ const AppInner: React.FC = () => {
         activeTab={activeTab}
         onTabChange={(t) => setActiveTab(t)}
         onOpenBilling={() => setBillingOpen(true)}
-        onLogout={() => {
-          // logout olduğunda aktif sekmeyi resetleyelim
-          setActiveTab('dashboard');
-        }}
+        onLogout={() => setActiveTab('dashboard')}
       >
-        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'dashboard' && <Dashboard onOpenBilling={() => setBillingOpen(true)} />}
         {activeTab === 'suggestions' && <Suggestions />}
         {activeTab === 'ai-content' && <AIContent />}
       </Layout>
