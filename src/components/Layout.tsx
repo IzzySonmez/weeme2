@@ -8,7 +8,7 @@ interface LayoutProps {
   children: React.ReactNode;
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
-  onOpenBilling: () => void; // ödeme modali
+  onOpenBilling: () => void;   // Ödeme modali için
   onLogout?: () => void;
 }
 
@@ -23,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
   }> = [
     { id: 'dashboard', label: 'Skorum', icon: BarChart3, guard: () => true },
     { id: 'suggestions', label: 'Öneriler', icon: Lightbulb, guard: () => true },
-    // IMPORTANT: AuthContext'teki enum ile eşleşsin
+    // Advanced dışındakilerde kilitli
     { id: 'ai-content', label: 'Yapay Zeka Gönderi', icon: Sparkles, guard: (m?: string) => m === 'Advanced' },
   ];
 
@@ -36,13 +36,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
   })();
 
   const creditLabel =
-    user?.membershipType === 'Free' ? (
-      <span className="text-sm text-gray-700">
-        Kredi: <b>{user?.credits ?? 0}</b>
-      </span>
-    ) : (
-      <span className="text-sm text-gray-700">Kredi: ∞</span>
-    );
+    user?.membershipType === 'Free'
+      ? <span className="text-sm text-gray-700">Kredi: <b>{user?.credits ?? 0}</b></span>
+      : <span className="text-sm text-gray-700">Kredi: ∞</span>;
 
   const handleLogout = () => {
     logout();
@@ -98,7 +94,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
                   key={tab.id}
                   onClick={() => allowed && onTabChange(tab.id)}
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    active ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    active ? 'border-blue-500 text-blue-600'
+                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   } ${!allowed ? 'opacity-40 cursor-not-allowed' : ''}`}
                   disabled={!allowed}
                   aria-current={active ? 'page' : undefined}
@@ -112,8 +109,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">{children}</main>
+      {/* Main */}
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {children}
+      </main>
     </div>
   );
 };
