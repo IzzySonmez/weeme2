@@ -306,7 +306,6 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
       )}
-      </div>
     </div>
   );
 };
