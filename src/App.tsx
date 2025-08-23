@@ -1,83 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Suggestions from './components/Suggestions';
 import AIContent from './components/AIContent';
 import PaymentModal from './components/PaymentModal';
-import { CreditCard } from 'lucide-react';
+import Login from './components/Login';
 
-const AppContent: React.FC = () => {
+type Tab = 'dashboard' | 'suggestions' | 'ai-content';
+
+const AppInner: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [billingOpen, setBillingOpen] = useState(false);
+
+  // Aktif sekmeyi localStorage’da tutalım (sayfa yenileyince hatırlasın)
+  useEffect(() => {
+    const saved = localStorage.getItem('activeTab');
+    if (saved === 'dashboard' || saved === 'suggestions' || saved === 'ai-content') {
+      setActiveTab(saved);
+    }
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen grid place-items-center text-gray-600">
+        Yükleniyor…
       </div>
     );
   }
 
+  // Giriş ekranı
   if (!user) {
     return <Login />;
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'suggestions':
-        return <Suggestions />;
-      case 'ai-content':
-        return <AIContent />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
   return (
     <>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-        {/* Credit Purchase Banner */}
-        {user.membershipType === 'Free' && user.credits <= 1 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CreditCard className="h-5 w-5 text-yellow-600 mr-2" />
-                <p className="text-sm text-yellow-800">
-                  Krediniz azalıyor! Daha fazla SEO taraması için kredi satın alın.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 text-sm"
-              >
-                Kredi Satın Al
-              </button>
-            </div>
-          </div>
-        )}
-
-        {renderContent()}
+      <Layout
+        activeTab={activeTab}
+        onTabChange={(t) => setActiveTab(t)}
+        onOpenBilling={() => setBillingOpen(true)}
+        onLogout={() => {
+          // logout olduğunda aktif sekmeyi resetleyelim
+          setActiveTab('dashboard');
+        }}
+      >
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'suggestions' && <Suggestions />}
+        {activeTab === 'ai-content' && <AIContent />}
       </Layout>
 
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-      />
+      <PaymentModal isOpen={billingOpen} onClose={() => setBillingOpen(false)} />
     </>
   );
 };
 
-function App() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-}
+const App: React.FC = () => (
+  <AuthProvider>
+    <AppInner />
+  </AuthProvider>
+);
 
 export default App;
