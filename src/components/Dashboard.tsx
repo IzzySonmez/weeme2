@@ -21,8 +21,8 @@ import {
   X,
   Sparkles,
   Settings,
-  Eye,
-  EyeOff
+  Copy,
+  Check
 } from 'lucide-react';
 
 type ScanFrequency = 'weekly' | 'biweekly' | 'monthly';
@@ -67,54 +67,122 @@ const normalizeUrl = (raw: string) => {
 };
 
 // Helper Components
-const EnterpriseCodeBox: React.FC<{ trackingCode: TrackingCode }> = ({ trackingCode }) => (
-  <div className="mt-4">
-    <div className="flex items-center gap-2 mb-2">
-      <ShieldCheck className="h-4 w-4 text-green-600" />
-      <span className="text-sm font-medium text-gray-700">Kurumsal Güvenli Kod</span>
-    </div>
-    <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto">
-{`<script
+const InstallationPanel: React.FC<{ 
+  trackingCode: TrackingCode; 
+  user: any;
+}> = ({ trackingCode, user }) => {
+  const [installTab, setInstallTab] = useState<'simple' | 'enterprise'>('simple');
+  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+
+  const simpleSnippet = `<script src="https://cdn.weeme.ai/seo.js" data-site-id="${user.id}" data-url="${trackingCode.websiteUrl}" defer></script>`;
+  
+  const enterpriseSnippet = `<script
   src="https://cdn.weeme.ai/seo.js"
-  data-site-id="${trackingCode.userId}"
+  data-site-id="${user.id}"
   data-url="${trackingCode.websiteUrl}"
   defer
   nonce="YOUR_NONCE_HERE"
   integrity="sha384-EXAMPLE_HASH"
   crossorigin="anonymous"
-></script>`}
-    </pre>
-    <p className="text-xs text-gray-600 mt-2">
-      CSP allowlist: <code>cdn.weeme.ai</code> • Nonce ve SRI hash'ini güvenlik ekibinizle koordine edin.
-    </p>
-  </div>
-);
+></script>`;
 
-const ManualScanBox: React.FC<{
-  showAdvanced: boolean;
-  onToggleAdvanced: () => void;
-  trackingCode: TrackingCode | null;
-}> = ({ showAdvanced, onToggleAdvanced, trackingCode }) => (
-  <div className="mt-4">
-    <p className="text-sm text-gray-600 mb-3">
-      Otomatik kurulum yerine manuel tarama kullanın.
-    </p>
-    <button
-      onClick={onToggleAdvanced}
-      className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-    >
-      {showAdvanced ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      Gelişmiş Kurulum
-    </button>
-    {showAdvanced && trackingCode && (
-      <div className="mt-3">
-        <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto">
-{trackingCode.code}
-        </pre>
+  const handleCopy = async (snippet: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopiedSnippet(type);
+      setTimeout(() => setCopiedSnippet(null), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Tab Controls */}
+      <div className="inline-flex rounded-lg border overflow-hidden">
+        <button
+          onClick={() => setInstallTab('simple')}
+          className={`px-3 py-1.5 text-sm ${
+            installTab === 'simple' 
+              ? 'bg-purple-600 text-white' 
+              : 'bg-white hover:bg-gray-50'
+          }`}
+        >
+          Basit Kurulum
+        </button>
+        <button
+          onClick={() => setInstallTab('enterprise')}
+          className={`px-3 py-1.5 text-sm ${
+            installTab === 'enterprise' 
+              ? 'bg-purple-600 text-white' 
+              : 'bg-white hover:bg-gray-50'
+          }`}
+        >
+          Kurumsal Güvenli Kurulum
+        </button>
       </div>
-    )}
-  </div>
-);
+
+      {/* Tab Content */}
+      {installTab === 'simple' ? (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            Tek satırlık kodu sitenizin <code className="bg-gray-100 px-1 rounded">&lt;head&gt;</code> bölümüne ekleyin. Küçük/orta ölçekli projeler için yeterlidir.
+          </p>
+          
+          <div className="relative">
+            <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto pr-12">
+{simpleSnippet}
+            </pre>
+            <button
+              onClick={() => handleCopy(simpleSnippet, 'simple')}
+              className="absolute top-2 right-2 p-1.5 rounded hover:bg-gray-200 transition-colors"
+              title="Kopyala"
+            >
+              {copiedSnippet === 'simple' ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-gray-600" />
+              )}
+            </button>
+          </div>
+          
+          <p className="text-xs text-gray-500">
+            Güvenlik politikalarınız (CSP/SRI) katıysa 'Kurumsal Güvenli Kurulum' sekmesini kullanın.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            Kurumsal güvenlik politikaları (CSP/SRI) için tavsiye edilir. 'nonce' ve 'integrity' alanlarını kendi dağıtım hattınızda üretin ve CSP allowlist ayarlarınızı güncelleyin.
+          </p>
+          
+          <div className="relative">
+            <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto pr-12">
+{enterpriseSnippet}
+            </pre>
+            <button
+              onClick={() => handleCopy(enterpriseSnippet, 'enterprise')}
+              className="absolute top-2 right-2 p-1.5 rounded hover:bg-gray-200 transition-colors"
+              title="Kopyala"
+            >
+              {copiedSnippet === 'enterprise' ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-gray-600" />
+              )}
+            </button>
+          </div>
+          
+          <ul className="text-xs text-gray-600 space-y-1 list-disc ml-4">
+            <li>nonce değeri server tarafından üretilip CSP'de izinli olmalı.</li>
+            <li>integrity (SRI) hash'i sürüm güncellemesinde değişir.</li>
+            <li>cdn.weeme.ai alan adını CSP'de allowlist'e ekleyin.</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CompactReportRow: React.FC<{
   report: SEOReport;
@@ -361,8 +429,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [autoSkipped, setAutoSkipped] = useState(false);
-  const [enterpriseMode, setEnterpriseMode] = useState(false);
-  const [showAdvancedSetup, setShowAdvancedSetup] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
@@ -681,27 +748,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
             </div>
 
             {trackingCode && (
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={enterpriseMode}
-                      onChange={(e) => setEnterpriseMode(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Kurumsal Kurulum (Güvenli)</span>
-                  </label>
-                </div>
-
-                {enterpriseMode ? (
-                  <EnterpriseCodeBox trackingCode={trackingCode} />
-                ) : (
-                  <ManualScanBox
-                    showAdvanced={showAdvancedSetup}
-                    onToggleAdvanced={() => setShowAdvancedSetup(!showAdvancedSetup)}
-                    trackingCode={trackingCode}
+              <div className="mt-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showInstall}
+                    onChange={(e) => setShowInstall(e.target.checked)}
+                    className="rounded border-gray-300"
                   />
+                  <span className="text-sm font-medium text-gray-700">Takip Kodunu Göster</span>
+                </label>
+                
+                {showInstall && (
+                  <InstallationPanel trackingCode={trackingCode} user={user} />
+                )}
+                
+                {!showInstall && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Otomatik kurulum yerine manuel tarama kullanın.
+                  </p>
                 )}
               </div>
             )}
