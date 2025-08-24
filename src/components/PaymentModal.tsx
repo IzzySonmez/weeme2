@@ -36,7 +36,7 @@ const PACKS: Record<PackageKey, {
 };
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) => {
-  const { user, addCredits, upgradeMembership } = useAuth();
+  const { user, addCredits, upgradeMembership, refreshUser } = useAuth();
   const [selected, setSelected] = useState<PackageKey>('credits');
   const [loading, setLoading] = useState(false);
 
@@ -58,6 +58,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) => {
         upgradeMembership('Advanced');
         alert('Advanced üyelik aktif!');
       }
+
+      // Kalıcı kayıtların anında UI'a yansıması ve çoklu-sekme uyumu için
+      refreshUser();
+
       setLoading(false);
       onClose();
     }, 900);
