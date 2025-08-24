@@ -8,32 +8,34 @@ interface LayoutProps {
   children: React.ReactNode;
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
-  onOpenBilling: () => void;   // Ödeme modali için
+  onOpenBilling: () => void;
+  onOpenDataTools?: () => void;
   onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpenBilling, onLogout }) => {
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  activeTab,
+  onTabChange,
+  onOpenBilling,
+  onOpenDataTools,
+  onLogout,
+}) => {
   const { user, logout } = useAuth();
 
-  const tabs: Array<{
-    id: Tab;
-    label: string;
-    icon: React.ComponentType<any>;
-    guard: (m?: string) => boolean;
-  }> = [
+  // Sekmeler (guard'lar membershipType'a bağlı)
+  const tabs: Array<{ id: Tab; label: string; icon: React.ComponentType<any>; guard: (m?: string) => boolean }> = [
     { id: 'dashboard', label: 'Skorum', icon: BarChart3, guard: () => true },
     { id: 'suggestions', label: 'Öneriler', icon: Lightbulb, guard: () => true },
-    // Advanced dışındakilerde kilitli
     { id: 'ai-content', label: 'Yapay Zeka Gönderi', icon: Sparkles, guard: (m?: string) => m === 'Advanced' },
   ];
 
-  const membershipBadge = (() => {
-    if (user?.membershipType === 'Advanced')
-      return <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">Advanced</span>;
-    if (user?.membershipType === 'Pro')
-      return <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">Pro</span>;
-    return <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">Free</span>;
-  })();
+  const membershipBadge =
+    user?.membershipType === 'Advanced'
+      ? <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">Advanced</span>
+      : user?.membershipType === 'Pro'
+      ? <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">Pro</span>
+      : <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">Free</span>;
 
   const creditLabel =
     user?.membershipType === 'Free'
@@ -69,6 +71,16 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
                 <span className="text-sm">Plan / Ödeme</span>
               </button>
 
+              {onOpenDataTools && (
+                <button
+                  onClick={onOpenDataTools}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50"
+                >
+                  {/* opsiyonel veri aracı butonun varsa ikon ekleyebilirsin */}
+                  <span className="text-sm">Veri</span>
+                </button>
+              )}
+
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
@@ -82,7 +94,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
       </header>
 
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      {/* ÖNEMLİ: key ile membership değişince nav yeniden oluşturulsun (guard anında yansısın) */}
+      <nav key={`${user?.id}-${user?.membershipType}`} className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {tabs.map((tab) => {
@@ -99,6 +112,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, onOpe
                   } ${!allowed ? 'opacity-40 cursor-not-allowed' : ''}`}
                   disabled={!allowed}
                   aria-current={active ? 'page' : undefined}
+                  title={!allowed ? 'Bu sekme Advanced üyelerde aktif' : undefined}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
