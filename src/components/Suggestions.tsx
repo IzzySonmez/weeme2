@@ -137,11 +137,11 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
     // Sitemap
     const sitemapRow = checks.find(c => c.id === 'robots-sitemap-hreflang');
     if (sitemapRow?.status === 'fail') {
-      quickWins.push('XML sitemap oluşturup /sitemap.xml olarak yayınlayın ve Search Console'a ekleyin.');
+      quickWins.push('XML sitemap oluşturup /sitemap.xml olarak yayınlayın ve Search Console\'a ekleyin.');
       addIssue(
         'Sitemap eksik',
         'Arama motorları sitenizi tam tarayamıyor.',
-        ['Site haritası üretin (dinamik).', 'Robots.txt içinde referans verin.', 'Search Console'a gönderein.'],
+        ['Site haritası üretin (dinamik).', 'Robots.txt içinde referans verin.', 'Search Console\'a gönderein.'],
         {
           title: 'Örnek sitemap.xml',
           language: 'xml',
@@ -199,7 +199,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
     );
 
     const roadmap = {
-      d30: ['Hız ve başlık yapısı (H1/H2) düzenlemeleri', 'XML sitemap üretimi ve Search Console'a gönderim', 'Öncelikli sayfalar için meta title/description standardizasyonu'],
+      d30: ['Hız ve başlık yapısı (H1/H2) düzenlemeleri', 'XML sitemap üretimi ve Search Console\'a gönderim', \'Öncelikli sayfalar için meta title/description standardizasyonu'],
       d60: ['İç bağlantı (topic cluster) yapısının kurulması', 'OG/Twitter Card ve structured data eklenmesi', 'Uluslararası yapı (hreflang) testleri'],
       d90: ['İçerik takvimi ve uzun kuyruk stratejisi', 'Yerelleştirilmiş landing sayfaları', 'Düzenli Core Web Vitals takibi'],
     };
