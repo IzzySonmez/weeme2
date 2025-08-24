@@ -1,158 +1,171 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { BarChart3, Eye, EyeOff } from 'lucide-react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { LogIn, UserPlus } from 'lucide-react';
 
-const Login: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
+type Mode = 'login' | 'register';
+
+interface LoginProps {
+  mode?: Mode;
+}
+
+const Login: React.FC<LoginProps> = ({ mode }) => {
+  const { login, register, user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // URL'den ?mode= al (prop yoksa)
+  const urlMode = useMemo<Mode>(() => {
+    const params = new URLSearchParams(location.search);
+    const m = (params.get('mode') || '').toLowerCase();
+    return (m === 'register' || m === 'login') ? (m as Mode) : 'login';
+  }, [location.search]);
+
+  const [active, setActive] = useState<Mode>(mode || urlMode);
+
+  useEffect(() => {
+    if (mode) setActive(mode);
+  }, [mode]);
+
+  // Login/register başarılıysa panele
+  useEffect(() => {
+    if (user) navigate('/app', { replace: true });
+  }, [user, navigate]);
+
+  // Form state
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // register için
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [busy, setBusy] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const handleLogin = async () => {
+    if (!username || !password) return alert('Kullanıcı adı ve şifre girin.');
+    setBusy(true);
+    const ok = await login(username, password);
+    setBusy(false);
+    if (!ok) alert('Giriş başarısız.');
+  };
 
-    try {
-      let success = false;
-      if (isLogin) {
-        success = await login(username, password);
-        if (!success) {
-          setError('Geçersiz kullanıcı adı veya şifre');
-        }
-      } else {
-        success = await register(username, email, password);
-        if (!success) {
-          setError('Kayıt işlemi başarısız');
-        }
-      }
-    } catch (err) {
-      setError('Bir hata oluştu');
-    } finally {
-      setLoading(false);
+  const handleRegister = async () => {
+    if (!username || !email || !password) return alert('Kullanıcı adı, e-posta ve şifre girin.');
+    setBusy(true);
+    const ok = await register(username, email, password);
+    setBusy(false);
+    if (!ok) {
+      // AuthContext duplicate kontrolleri alert basıyor; burada yedek uyarı bırakıyoruz
+      return;
     }
   };
 
+  if (isLoading) {
+    return <div className="min-h-screen grid place-items-center text-gray-600">Yükleniyor…</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <BarChart3 className="h-12 w-12 text-blue-600" />
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            SEO Optimizer
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isLogin ? 'Hesabınıza giriş yapın' : 'Yeni hesap oluşturun'}
-          </p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white border rounded-xl shadow-sm p-6">
+        <div className="text-center mb-6">
+          <div className="text-xl font-semibold">weeme.ai</div>
+          <div className="text-sm text-gray-600">AI tabanlı SEO otomasyonu</div>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-xl rounded-lg">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+        {/* Tabs */}
+        <div className="grid grid-cols-2 text-sm border rounded-lg overflow-hidden mb-6">
+          <button
+            onClick={() => setActive('login')}
+            className={`py-2 ${active === 'login' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
+          >
+            Giriş Yap
+          </button>
+          <button
+            onClick={() => setActive('register')}
+            className={`py-2 ${active === 'register' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
+          >
+            Üye Ol
+          </button>
+        </div>
 
+        {/* Forms */}
+        {active === 'login' ? (
+          <div className="space-y-3">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Kullanıcı Adı
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Kullanıcı Adı</label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Kullanıcı adınızı girin"
+                placeholder="kullaniciadi"
+                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
-
-            {!isLogin && (
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  E-posta
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="E-posta adresinizi girin"
-                />
-              </div>
-            )}
-
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Şifre
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Şifrenizi girin"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
+              <label className="block text-sm font-medium text-gray-700">Şifre</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="•••••••"
+                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
-
+            <button
+              onClick={handleLogin}
+              disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+            >
+              <LogIn className="h-4 w-4" /> Giriş Yap
+            </button>
+            <div className="text-xs text-gray-600 text-center">
+              Hesabın yok mu?{' '}
+              <Link to="/register" className="text-purple-700 hover:underline">Üye ol</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
             <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'İşleniyor...' : (isLogin ? 'Giriş Yap' : 'Kayıt Ol')}
-              </button>
+              <label className="block text-sm font-medium text-gray-700">Kullanıcı Adı</label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="kullaniciadi"
+                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">E‑posta</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ornek@domain.com"
+                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Şifre</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="•••••••"
+                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <button
+              onClick={handleRegister}
+              disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <UserPlus className="h-4 w-4" /> Üye Ol
+            </button>
+            <div className="text-xs text-gray-600 text-center">
+              Zaten hesabın var mı?{' '}
+              <Link to="/login" className="text-purple-700 hover:underline">Giriş yap</Link>
+            </div>
+          </div>
+        )}
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-600 hover:text-blue-500 text-sm"
-              >
-                {isLogin ? 'Hesabınız yok mu? Kayıt olun' : 'Zaten hesabınız var mı? Giriş yapın'}
-              </button>
-            </div>
-          </form>
-
-          {isLogin && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Demo Hesap:</strong><br />
-                Kullanıcı Adı: test<br />
-                Şifre: test123
-              </p>
-            </div>
-          )}
+        <div className="mt-6 text-xs text-gray-500 text-center">
+          “Giriş Yap” veya “Üye Ol” diyerek <b>Kullanım Koşulları</b>nı kabul etmiş olursunuz.
         </div>
       </div>
     </div>
