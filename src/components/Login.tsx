@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, Sparkles } from 'lucide-react';
 
 type Mode = 'login' | 'register';
 
@@ -64,8 +64,20 @@ const Login: React.FC<LoginProps> = ({ mode }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white border rounded-xl shadow-sm p-6">
+        <div className="mb-6 flex items-center justify-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 group"
+            aria-label="weeme.ai ana sayfa"
+          >
+            <Sparkles className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors" />
+            <span className="text-lg font-semibold text-gray-900 group-hover:text-gray-800 transition-colors">
+              weeme.ai
+            </span>
+          </Link>
+        </div>
+
         <div className="text-center mb-6">
-          <div className="text-xl font-semibold">weeme.ai</div>
           <div className="text-sm text-gray-600">AI tabanlı SEO otomasyonu</div>
         </div>
 
