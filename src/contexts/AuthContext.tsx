@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  migrateStorage,
+  getUserIndex,
+  setUserIndex,
+  loadCurrentUser,
+  loadUserById,
+  saveUserById,
+  setCurrentSessionUserId,
+} from '../lib/storage';
 
+// Tipleri burada da açık tutuyoruz (lib ile uyumlu)
 export type MembershipType = 'Free' | 'Pro' | 'Advanced';
 
 export interface User {
@@ -7,7 +17,7 @@ export interface User {
   username: string;
   email: string;
   membershipType: MembershipType;
-  credits: number; // Free için anlamlı; Pro/Advanced'te UI'da ∞ gösterebilirsin
+  credits: number;
   createdAt: string;
 }
 
@@ -18,14 +28,10 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
 
-  // Eski API'n kalsın (bazı yerlerde kullanılıyor olabilir)
   updateCredits: (credits: number) => void;
-
-  // Sprint 1 ekleri:
   addCredits: (amount: number) => void;
   upgradeMembership: (type: MembershipType) => void;
 
-  // İleride gerçek backend'e geçtiğinde işine yarar:
   refreshUser: () => void;
 }
 
@@ -37,102 +43,135 @@ export const useAuth = () => {
   return ctx;
 };
 
+const toPersisted = (u: User) => u;
+const toRuntime = (u: User) => u;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ---- local persist helpers ----
-  const persist = (u: User) => {
-    setUser(u);
-    localStorage.setItem('user', JSON.stringify(u));
-  };
-
-  const load = () => {
-    const saved = localStorage.getItem('user');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as User;
-        setUser(parsed);
-      } catch {
-        localStorage.removeItem('user');
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-  };
-
+  // ---- bootstrap: migration + load session user ----
   useEffect(() => {
-    load();
-    setIsLoading(false);
-    // Çoklu sekme senkronizasyonu
+    try {
+      migrateStorage();
+      const u = loadCurrentUser();
+      setUser(u ? toRuntime(u) : null);
+    } finally {
+      setIsLoading(false);
+    }
+
+    // çoklu sekme senkronizasyonu
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'user') load();
+      if (e.key === 'currentSessionUserId' || e.key === `user_${user?.id}`) {
+        const u = loadCurrentUser();
+        setUser(u ? toRuntime(u) : null);
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- public actions ----
+  const persistAndSet = (u: User) => {
+    saveUserById(toPersisted(u));
+    setCurrentSessionUserId(u.id); // session: sadece aktif kullanıcıyı değiştir
+    setUser(u);
+  };
+
+  // ---- Auth Actions ----
   const login = async (username: string, password: string) => {
-    // DEMO: test hesabı
-    if (username === 'test' && password === 'test123') {
-      const demo: User = {
-        id: '1',
-        username: 'test',
-        email: 'test@example.com',
-        membershipType: 'Free',
-        credits: 3,
-        createdAt: new Date().toISOString(),
-      };
-      persist(demo);
-      return true;
+    // DEMO: şifre kontrolü basit (test/test123 vb.)
+    if (!username || !password) return false;
+
+    // 1) userIndex'te var mı?
+    const index = getUserIndex();
+    const existingId = index[username];
+
+    if (existingId) {
+      const existing = loadUserById(existingId);
+      if (existing) {
+        persistAndSet(existing);
+        return true;
+      }
+      // id var ama kayıt yoksa, güvenli tarafta yeni kullanıcı yarat
     }
-    // Kendi login akışın yoksa false dön
-    return false;
+
+    // 2) Yoksa yeni kullanıcı oluştur (Free, 3 kredi)
+    const id = Date.now().toString();
+    const fresh: User = {
+      id,
+      username,
+      email: `${username}@example.com`,
+      membershipType: 'Free',
+      credits: 3,
+      createdAt: new Date().toISOString(),
+    };
+
+    // index'e yaz, kullanıcıyı kalıcı kaydet, session id'yi güncelle
+    index[username] = id;
+    setUserIndex(index);
+    persistAndSet(fresh);
+
+    return true;
   };
 
   const register = async (username: string, email: string, password: string) => {
-    const u: User = {
-      id: Date.now().toString(),
+    const index = getUserIndex();
+    if (index[username]) {
+      // kullanıcı adı mevcutsa yeni oluşturma (demo için true dönebilir ya da false)
+      // biz kullanıcıyı yükleyip session'ı ona çevirelim
+      const existing = loadUserById(index[username]);
+      if (existing) {
+        persistAndSet(existing);
+        return true;
+      }
+    }
+
+    const id = Date.now().toString();
+    const fresh: User = {
+      id,
       username,
       email,
       membershipType: 'Free',
       credits: 3,
       createdAt: new Date().toISOString(),
     };
-    persist(u);
+
+    index[username] = id;
+    setUserIndex(index);
+    persistAndSet(fresh);
+
     return true;
   };
 
   const logout = () => {
+    // FRONT‑104: kalıcı veriyi SİLME, sadece oturumu kapat
+    setCurrentSessionUserId(null);
     setUser(null);
-    localStorage.removeItem('user');
   };
 
+  // ---- Profile Mutations ----
   const updateCredits = (credits: number) => {
     if (!user) return;
     const next = { ...user, credits: Math.max(0, credits) };
-    persist(next);
+    persistAndSet(next);
   };
 
-  // Sprint 1: kredi ekleme (paket satın alma simülasyonu)
   const addCredits = (amount: number) => {
     if (!user) return;
     const next = { ...user, credits: Math.max(0, (user.credits ?? 0) + amount) };
-    persist(next);
+    persistAndSet(next);
   };
 
-  // Sprint 1: üyelik yükseltme (Pro/Advanced)
   const upgradeMembership = (type: MembershipType) => {
     if (!user) return;
     const next = { ...user, membershipType: type };
-    persist(next);
+    persistAndSet(next);
   };
 
   const refreshUser = () => {
-    load();
+    const u = loadCurrentUser();
+    setUser(u ? toRuntime(u) : null);
   };
 
   const value = useMemo<AuthContextType>(
