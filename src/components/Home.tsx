@@ -21,11 +21,14 @@ const Home: React.FC = () => {
             <button onClick={() => scrollTo('features')} className="hover:text-gray-700">Özellikler</button>
             <button onClick={() => scrollTo('plans')} className="hover:text-gray-700">Planlar</button>
             <button onClick={() => scrollTo('faq')} className="hover:text-gray-700">SSS</button>
-            <Link to="/app" className="px-3 py-1.5 rounded-md border hover:bg-gray-50">Giriş Yap</Link>
-            <Link to="/app" className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">Hemen Başla</Link>
+            {/* Giriş Yap → /login */}
+            <Link to="/login" className="px-3 py-1.5 rounded-md border hover:bg-gray-50">Giriş Yap</Link>
+            {/* Hemen Başla → /register */}
+            <Link to="/register" className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">Hemen Başla</Link>
           </nav>
           <div className="md:hidden">
-            <Link to="/app" className="px-3 py-1.5 rounded-md bg-purple-600 text-white">Başla</Link>
+            {/* Mobilde kısa buton: Hemen Başla → /register */}
+            <Link to="/register" className="px-3 py-1.5 rounded-md bg-purple-600 text-white">Başla</Link>
           </div>
         </div>
       </header>
@@ -44,7 +47,8 @@ const Home: React.FC = () => {
                 eksikleri ve yapılacakları çıkarır; düzenli aralıklarla otomatik raporlar üretir.
               </p>
               <div className="mt-6 flex items-center gap-3">
-                <Link to="/app" className="px-5 py-3 rounded-md bg-purple-600 text-white hover:bg-purple-700 inline-flex items-center gap-2">
+                {/* Hemen Başla → /register */}
+                <Link to="/register" className="px-5 py-3 rounded-md bg-purple-600 text-white hover:bg-purple-700 inline-flex items-center gap-2">
                   <Rocket className="h-5 w-5" /> Hemen Başla
                 </Link>
                 <button onClick={() => scrollTo('features')} className="px-5 py-3 rounded-md border hover:bg-gray-50">
@@ -101,7 +105,7 @@ const Home: React.FC = () => {
             <div className="p-6 rounded-xl border">
               <CalendarClock className="h-6 w-6 text-emerald-600" />
               <h3 className="mt-3 font-semibold">Otomatik Raporlama</h3>
-              <p className="text-sm text-gray-600 mt-1">Haftalık / 2 haftalık / aylık otomatik rapor akışı ve geçmiş.</p>
+              <p className="text-sm text-gray-600 mt-1">Haftalık, 2 haftalık veya aylık otomatik rapor akışı ve geçmiş.</p>
             </div>
             <div className="p-6 rounded-xl border">
               <Shield className="h-6 w-6 text-purple-600" />
@@ -142,8 +146,8 @@ const Home: React.FC = () => {
                 <li>• Temel rapor</li>
                 <li>• Panel erişimi</li>
               </ul>
-              <Link to="/app" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md border hover:bg-gray-50">
-                Başla
+              <Link to="/register" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md border hover:bg-gray-50">
+                Ücretsiz Başla
               </Link>
             </div>
 
@@ -151,11 +155,11 @@ const Home: React.FC = () => {
               <div className="text-sm font-semibold text-blue-700">Pro</div>
               <div className="mt-2 text-3xl font-bold">₺99<span className="text-base text-gray-500">/ay</span></div>
               <ul className="mt-3 text-sm text-gray-700 space-y-1">
-                <li>• Sınırlıksız (adil kullanım)</li>
+                <li>• Sınırsız (adil kullanım)</li>
                 <li>• AI SEO önerileri</li>
                 <li>• Detaylı raporlar</li>
               </ul>
-              <Link to="/app" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">
+              <Link to="/register" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">
                 Pro’ya Geç
               </Link>
             </div>
@@ -168,15 +172,15 @@ const Home: React.FC = () => {
                 <li>• AI içerik üretimi</li>
                 <li>• 7/24 destek</li>
               </ul>
-              <Link to="/app" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
+              <Link to="/register" className="mt-4 inline-block w-full text-center px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
                 Advanced’e Geç
               </Link>
             </div>
           </div>
 
           <div className="mt-10 text-center">
-            <Link to="/app" className="inline-flex items-center gap-2 px-5 py-2 rounded-md border hover:bg-gray-50">
-              Detaylı Planlar ve Ödeme
+            <Link to="/register" className="inline-flex items-center gap-2 px-5 py-2 rounded-md border hover:bg-gray-50">
+              Detaylı Planlar ve Kayıt
             </Link>
           </div>
         </div>
@@ -187,7 +191,7 @@ const Home: React.FC = () => {
         <div className="max-w-5xl mx-auto px-4 text-center">
           <h3 className="text-2xl font-semibold">100+ site weeme.ai ile SEO performansını yükseltti</h3>
           <p className="mt-2 text-gray-600">Siz de dakikalar içinde kurulum yapın, düzenli raporlar almaya başlayın.</p>
-          <Link to="/app" className="mt-6 inline-block px-6 py-3 rounded-md bg-purple-600 text-white hover:bg-purple-700">
+          <Link to="/register" className="mt-6 inline-block px-6 py-3 rounded-md bg-purple-600 text-white hover:bg-purple-700">
             Ücretsiz Başlayın
           </Link>
         </div>
@@ -222,7 +226,7 @@ const Home: React.FC = () => {
       <footer className="border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between text-sm text-gray-600">
           <span>© 2025 weeme.ai</span>
-          <Link to="/app" className="hover:underline">Panele git</Link>
+          <Link to="/login" className="hover:underline">Giriş yap</Link>
         </div>
       </footer>
     </div>
