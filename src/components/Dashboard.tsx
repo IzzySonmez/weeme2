@@ -12,7 +12,7 @@ import {
   Filter,
   Download,
   AlertCircle,
-  CreditCard
+  CreditCard,
 } from 'lucide-react';
 
 type ScanFrequency = 'weekly' | 'biweekly' | 'monthly';
@@ -69,7 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
-  // load persisted data
+  // Persisted veriyi yükle
   useEffect(() => {
     if (!user) return;
     const rep = localStorage.getItem(`reports_${user.id}`);
@@ -83,20 +83,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
     }
   }, [user?.id]);
 
-  // auto run if due
+  // Due ise otomatik çalıştır (nextScan değişimlerinde)
   useEffect(() => {
     if (!user || !trackingCode) return;
     const now = Date.now();
     const due = new Date(trackingCode.nextScan).getTime();
     if (now >= due) {
-      // Free ise kredi kontrolü
       if (user.membershipType === 'Free' && user.credits <= 0) return;
       runSEOScan(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackingCode?.nextScan, user?.membershipType, user?.credits]);
 
-  // years computed from reports
+  // FRONT-107: trackingCode ilk kez state'e geldiğinde "gecikmiş tarama" kaçmasın
+  useEffect(() => {
+    if (!user || !trackingCode) return;
+    const due = new Date(trackingCode.nextScan).getTime();
+    if (Date.now() >= due) {
+      if (user.membershipType === 'Free' && (user.credits ?? 0) <= 0) return;
+      runSEOScan(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!trackingCode, user?.id]);
+
+  // Yıllar (raporlardan)
   const years = useMemo(() => {
     const set = new Set<number>();
     reports.forEach((r) => set.add(new Date(r.createdAt).getFullYear()));
@@ -105,7 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
     return arr.sort((a, b) => b - a);
   }, [reports]);
 
-  // months for selectedYear
+  // Aylar (seçili yıl)
   const months = useMemo(() => {
     const set = new Set<number>();
     reports
@@ -191,14 +201,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
     if (!user || !trackingCode) return;
 
     if (!auto && user.membershipType === 'Free' && user.credits <= 0) {
-      // alert yerine ödeme modali açalım
       onOpenBilling?.();
       return;
     }
 
     setLoading(true);
 
-    // Simüle edilmiş tarama (gerçek API entegrasyonunda burayı değiştirin)
+    // Simüle tarama
     setTimeout(() => {
       const score = Math.floor(Math.random() * 40) + 60;
       const mockReport: SEOReport = {
@@ -243,12 +252,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
       setReports(updatedReports);
       localStorage.setItem(`reports_${user.id}`, JSON.stringify(updatedReports));
 
-      // Free kullanıcıda kredi düş
       if (user.membershipType === 'Free') {
         updateCredits(Math.max(0, user.credits - 1));
       }
 
-      // tracking nextScan güncelle
       const updatedTC: TrackingCode = {
         ...trackingCode,
         lastScan: new Date().toISOString(),
@@ -324,7 +331,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
             {trackingCode && (
               <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Aşağıdaki kodu sitenizin <b>&lt;head&gt;</b> bölümüne ekleyin:</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  Aşağıdaki kodu sitenizin <b>&lt;head&gt;</b> bölümüne ekleyin:
+                </p>
                 <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto">
 {trackingCode.code}
                 </pre>
@@ -405,7 +414,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 border rounded-lg">
               <div className="text-sm text-gray-500">Son Skor</div>
-              <div className={`text-3xl font-bold ${lastScore! >= 80 ? 'text-emerald-600' : lastScore! >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+              <div
+                className={`text-3xl font-bold ${
+                  (lastScore ?? 0) >= 80 ? 'text-emerald-600' : (lastScore ?? 0) >= 50 ? 'text-amber-600' : 'text-rose-600'
+                }`}
+              >
                 {lastScore}
               </div>
             </div>
