@@ -52,6 +52,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const [result, setResult] = useState<AIStruct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; at: string; prompt: string; res: AIStruct }>>([]);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [tempKey, setTempKey] = useState('');
 
   // Load latest report
   const latestReport: SEOReport | null = useMemo(() => {
