@@ -49,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // bootstrap
   useEffect(() => {
     try {
       migrateStorage();
@@ -60,13 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const onStorage = (e: StorageEvent) => {
-      // Guard reactivity: session veya kullanıcı verisi değiştiyse güncelle
       const key = e.key || '';
-      if (
-        key === 'currentSessionUserId' ||
-        key === 'userIndex' ||
-        key.startsWith('user_')
-      ) {
+      if (key === 'currentSessionUserId' || key === 'userIndex' || key.startsWith('user_')) {
         const u = loadCurrentUser();
         setUser(u ? toRuntime(u) : null);
       }
@@ -83,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(u);
   };
 
-  // Auth Actions
   const login = async (username: string, password: string) => {
     if (!username || !password) return false;
     const index = getUserIndex();
@@ -115,14 +108,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (username: string, email: string, password: string) => {
     const index = getUserIndex();
+
+    // username var mı?
     if (index[username]) {
-      // FRONT-108: duplicate username → yeni hesap oluşturma.
-      // UI tarafı false dönüşüne göre mesaj gösterebilir.
-      const existing = loadUserById(index[username]);
-      if (existing) {
-        persistAndSet(existing);
-      }
+      alert('Bu kullanıcı adı zaten kayıtlı.');
       return false;
+    }
+
+    // email var mı? (tüm user kayıtlarını tara)
+    for (const uid of Object.values(index)) {
+      const u = loadUserById(uid as string);
+      if (u && u.email === email) {
+        alert('Bu e-posta adresi zaten kayıtlı.');
+        return false;
+      }
     }
 
     const id = Date.now().toString();
