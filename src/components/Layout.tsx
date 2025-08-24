@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, BarChart3, Lightbulb, Sparkles, CreditCard } from 'lucide-react';
 
@@ -53,9 +54,18 @@ const Layout: React.FC<LayoutProps> = ({
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Sol logo/marka: weeme.ai → ana sayfa */}
             <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
-              <h1 className="ml-2 text-xl font-semibold text-gray-900">SEO Optimizer</h1>
+              <Link
+                to="/"
+                className="flex items-center gap-2 group"
+                aria-label="weeme.ai ana sayfa"
+              >
+                <Sparkles className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors" />
+                <span className="text-lg font-semibold text-gray-900 group-hover:text-gray-800 transition-colors">
+                  weeme.ai
+                </span>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-3">
