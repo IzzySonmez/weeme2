@@ -1,397 +1,496 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { SEOReport } from '../types';
+import type { SEOReport } from '../types';
 import {
-  Lightbulb,
-  Send,
-  Loader,
-  AlertCircle,
-  CheckCircle,
   Sparkles,
-  Copy,
+  Lightbulb,
+  Loader,
+  CheckCircle2,
+  AlertTriangle,
+  ClipboardCopy,
   Check,
-  History,
-  Trash2,
+  Info,
+  ArrowRight,
+  Rocket,
+  Lock,
 } from 'lucide-react';
 
-type ChatItem = {
-  id: string;
-  prompt: string;
-  response: string;
-  createdAt: string;
-  contextScore?: number;
+type AIStruct = {
+  quickWins?: string[];
+  issues?: Array<{ title: string; why?: string; how?: string[] }>;
+  snippets?: Array<{ title: string; language?: string; code: string; note?: string }>;
+  roadmap?: { d30?: string[]; d60?: string[]; d90?: string[] };
+  notes?: string[];
 };
 
-const Suggestions: React.FC = () => {
+type CheckRow = { id: string; title: string; status: 'pass' | 'fail' | 'check'; note?: string };
+
+interface SuggestionsProps {
+  onOpenBilling?: () => void;
+}
+
+const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const { user } = useAuth();
 
-  const [reports, setReports] = useState<SEOReport[]>([]);
   const [prompt, setPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
+  const [includeReport, setIncludeReport] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
-  const [history, setHistory] = useState<ChatItem[]>([]);
+  const [result, setResult] = useState<AIStruct | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [history, setHistory] = useState<Array<{ id: string; at: string; prompt: string; res: AIStruct }>>([]);
 
-  // Load reports & history
-  useEffect(() => {
-    const savedReports = localStorage.getItem(`reports_${user?.id}`);
-    if (savedReports) setReports(JSON.parse(savedReports));
-
-    const savedHistory = localStorage.getItem(`aiSeoHistory_${user?.id}`);
-    if (savedHistory) setHistory(JSON.parse(savedHistory));
+  // Load latest report
+  const latestReport: SEOReport | null = useMemo(() => {
+    if (!user) return null;
+    const raw = localStorage.getItem(`reports_${user.id}`);
+    if (!raw) return null;
+    const arr: SEOReport[] = JSON.parse(raw);
+    return arr?.[0] ?? null;
   }, [user?.id]);
 
-  const latestReport = reports[0];
-
-  // Hazır hızlı komutlar (prompt şablonları)
-  const quickPrompts = useMemo(
-    () => [
-      'Eksik başlık etiketleri ve zayıf iç bağlantılar için 10 maddelik eylem planı yaz',
-      'Sayfa hızı ve Core Web Vitals için 30-60-90 günlük iyileştirme planı çıkar',
-      'Site genelinde meta title/description standartlarını ve örnek şablonları öner',
-      'Sitemap, robots.txt ve structured data için kontrol listesi oluştur',
-      'Blog içerikleri için uzun kuyruk anahtar kelime stratejisi ve içerik takvimi öner',
-    ],
-    []
-  );
-
-  // Rapor bağlamını isteme ekle
-  const contextFromReport = useMemo(() => {
+  // Build report summary
+  const reportSummary = useMemo(() => {
     if (!latestReport) return '';
-    const lines: string[] = [];
-    lines.push(`SEO Skoru: ${latestReport.score}`);
-    if (latestReport.positives?.length) {
-      lines.push(`Olumlu: ${latestReport.positives.slice(0, 5).join('; ')}`);
-    }
-    if (latestReport.negatives?.length) {
-      lines.push(`Eksikler: ${latestReport.negatives.slice(0, 8).join('; ')}`);
-    }
-    if (latestReport.reportData) {
-      const d = latestReport.reportData as any;
-      if (typeof d.pageSpeed === 'number') lines.push(`PageSpeed: ${d.pageSpeed}`);
-      if (Array.isArray(d.keywords) && d.keywords.length)
-        lines.push(`Örnek Anahtar Kelimeler: ${d.keywords.slice(0, 6).join(', ')}`);
-    }
-    lines.push(`Site: ${latestReport.websiteUrl}`);
-    return lines.join(' | ');
+    const r = latestReport as any;
+    const rd = (latestReport as any).reportData || {};
+    const parts = [
+      `SEO Skoru: ${latestReport.score}`,
+      `Olumlu: ${latestReport.positives?.slice(0,5).join('; ')}`,
+      `Eksikler: ${latestReport.negatives?.slice(0,5).join('; ')}`,
+      `PageSpeed: ${rd.pageSpeed ?? '—'}`,
+      `Mobil: ${rd.mobileOptimization ? 'evet' : 'hayır'}`,
+      `SSL: ${rd.sslCertificate ? 'evet' : 'hayır'}`,
+      `Örnek Anahtar Kelimeler: ${(rd.keywords || []).join(', ') || '—'}`,
+      `Site: ${latestReport.websiteUrl}`,
+    ];
+    return parts.join(' | ');
   }, [latestReport]);
 
-  const gated = user?.membershipType === 'Free'; // Pro ve Advanced kullanabilir
+  // Build checks grid (heuristics)
+  const checks: CheckRow[] = useMemo(() => {
+    const rd = (latestReport as any)?.reportData || {};
+    const negativesText = (latestReport?.negatives || []).join(' ').toLowerCase();
 
-  const handleCopy = async (text: string, key: string) => {
+    const hasSitemapNeg = negativesText.includes('sitemap bulunamadı');
+    const hasH1Neg = negativesText.includes('h1');
+    const hasOgNeg = negativesText.includes('sosyal medya meta');
+    const perf = typeof rd.pageSpeed === 'number' ? rd.pageSpeed : null;
+
+    const rows: CheckRow[] = [
+      { id: 'hreflang', title: 'Hreflang etiketleri', status: 'check', note: 'Doğrulama önerilir' },
+      { id: 'duplicate', title: 'Duplicate içerik / canonical', status: 'check', note: 'Olası kopya içerik için kanonik kontrol' },
+      { id: 'url-strategy', title: 'URL stratejisi (diller için)', status: 'check' },
+      { id: 'intl-speed', title: 'Uluslararası erişim / hız', status: perf !== null && perf >= 80 ? 'pass' : perf !== null ? 'fail' : 'check', note: perf !== null ? `PageSpeed: ${perf}` : undefined },
+      { id: 'l10n', title: 'Çeviri & lokal uyum', status: 'check' },
+      { id: 'local-engines', title: 'Lokal arama motorlarında görünürlük', status: 'check' },
+      { id: 'keywords', title: 'Anahtar kelime seçimi', status: (rd.keywords || []).length ? 'pass' : 'check' },
+      { id: 'robots-sitemap-hreflang', title: 'robots.txt / sitemap.xml / hreflang', status: hasSitemapNeg ? 'fail' : 'check', note: hasSitemapNeg ? 'Sitemap eksik' : undefined },
+      { id: 'canonical', title: 'Canonical etiketleri', status: 'check' },
+      { id: 'indexing', title: 'Search Console index sorunları', status: 'check' },
+      { id: 'mobile', title: 'Responsive tasarım', status: (rd.mobileOptimization ? 'pass' : 'check') },
+    ];
+    return rows;
+  }, [latestReport]);
+
+  useEffect(() => {
+    if (!user) return;
+    const saved = localStorage.getItem(`aiSuggestions_${user.id}`);
+    if (saved) setHistory(JSON.parse(saved));
+  }, [user?.id]);
+
+  const saveHistory = (res: AIStruct, usedPrompt: string) => {
+    if (!user) return;
+    const item = { id: `${Date.now()}`, at: new Date().toISOString(), prompt: usedPrompt, res };
+    const updated = [item, ...history].slice(0, 5);
+    setHistory(updated);
+    localStorage.setItem(`aiSuggestions_${user.id}`, JSON.stringify(updated));
+  };
+
+  const copy = async (key: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1600);
-    } catch {
-      // no-op
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 1500);
+    } catch {}
+  };
+
+  const buildUserPrompt = () => {
+    const base = prompt?.trim() || 'SEO iyileştirme planı üret.';
+    const ctx = includeReport && reportSummary ? `\n\n[RAPOR BAĞLAMI]\n${reportSummary}` : '';
+    const checksText = checks.map(c => `- ${c.title}: ${c.status}${c.note ? ` (${c.note})` : ''}`).join('\n');
+    const checkBlock = `\n\n[KONTROLLER]\n${checksText}`;
+    const req = `\n\n[İSTEK]\n- Önce en hızlı kazanımlar (quick wins)\n- Sorunlar için: neden (why) + adım adım çözüm (how)\n- 30/60/90 gün yol haritası\n- ${user?.membershipType === 'Advanced' ? 'Uygulanabilir KOD SNIPPET\'LERİ de ver.' : 'Kod snippet gerekmez.'}\n- JSON formatında dön (quickWins[], issues[], ${user?.membershipType === 'Advanced' ? 'snippets[],' : ''} roadmap{d30[],d60[],d90[]}, notes[]).`;
+    return `${base}${ctx}${checkBlock}${req}`;
+  };
+
+  const offlineGenerate = (): AIStruct => {
+    // Heuristic suggestions based on checks + negatives
+    const quickWins: string[] = [];
+    const issues: AIStruct['issues'] = [];
+    const snippets: NonNullable<AIStruct['snippets']> = [];
+
+    const addIssue = (title: string, why: string, how: string[], snippet?: {title:string;code:string;language?:string;note?:string}) => {
+      issues!.push({ title, why, how });
+      if (user?.membershipType === 'Advanced' && snippet) snippets.push(snippet);
+    };
+
+    // Sitemap
+    const sitemapRow = checks.find(c => c.id === 'robots-sitemap-hreflang');
+    if (sitemapRow?.status === 'fail') {
+      quickWins.push('XML sitemap oluşturup /sitemap.xml olarak yayınlayın ve Search Console'a ekleyin.');
+      addIssue(
+        'Sitemap eksik',
+        'Arama motorları sitenizi tam tarayamıyor.',
+        ['Site haritası üretin (dinamik).', 'Robots.txt içinde referans verin.', 'Search Console'a gönderein.'],
+        {
+          title: 'Örnek sitemap.xml',
+          language: 'xml',
+          code: `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${latestReport?.websiteUrl || 'https://www.example.com/'}</loc></url>
+</urlset>`,
+          note: 'Dinamik üretmeniz önerilir.'
+        }
+      );
     }
-  };
 
-  const saveHistory = (item: ChatItem) => {
-    const updated = [item, ...history].slice(0, 50);
-    setHistory(updated);
-    localStorage.setItem(`aiSeoHistory_${user?.id}`, JSON.stringify(updated));
-  };
+    // H1 / headings
+    const negativesText = (latestReport?.negatives || []).join(' ').toLowerCase();
+    if (negativesText.includes('h1')) {
+      quickWins.push('Ana sayfaya benzersiz bir H1 ekleyin.');
+      addIssue(
+        'H1 etiketi eksik',
+        'Sayfanın ana konusu arama motorlarına net iletilmiyor.',
+        ['Her sayfada tek, anlamlı bir H1 kullanın.', 'H2/H3 ile hiyerarşi kurun.'],
+        {
+          title: 'H1 örneği',
+          language: 'html',
+          code: `<h1>${(latestReport as any)?.reportData?.keywords?.[0] || 'Sayfanın Ana Başlığı'}</h1>`,
+        }
+      );
+    }
 
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem(`aiSeoHistory_${user?.id}`);
-  };
+    // Performance
+    const perf = (latestReport as any)?.reportData?.pageSpeed;
+    if (typeof perf === 'number' && perf < 85) {
+      quickWins.push('Görselleri sıkıştırın ve lazy-load uygulayın.');
+      addIssue(
+        'Sayfa hızı düşük',
+        'Kötü Core Web Vitals sıralamayı olumsuz etkiler.',
+        ['Görsel optimizasyonu ve lazy-load.', 'Kritik CSS/JS küçültme ve geç yükleme.', 'CDN kullanımı.']
+      );
+    }
 
-  const pickMock = (p: string) => {
-    // İstem ve rapor bağlamına göre sahte (mock) içerik
-    const contextNote = contextFromReport ? `\n\n🔎 Bağlam: ${contextFromReport}` : '';
-    return (
-      `## 🛠 Hızlı Kazanımlar (0-7 gün)\n` +
-      `- H1 etiketi eksik sayfalar için şablon belirleyin ve tekil H1 kuralını uygulayın.\n` +
-      `- Open Graph ve Twitter Card meta etiketlerini temel şablonla ekleyin.\n` +
-      `- Görsellere eksik alt metinlerini ekleyin; dosya adlarını anahtar kelimeyle uyumlu hale getirin.\n` +
-      `- XML sitemap oluşturun ve Search Console'a gönderin.\n` +
-      `- İç bağlantı yapısını güçlendirmek için üst seviye sayfalardan kategori/önemli sayfalara 2-3 bağlantı ekleyin.\n\n` +
-      `## 📈 30-60-90 Günlük Plan\n` +
-      `**30 Gün:** Site genelinde title/description standartlarını eşitleyin (title ≤ 60 karakter, description 140-160). Core sayfalarda LCP hedefi ≤ 2.5s.\n` +
-      `**60 Gün:** Şema işaretlemelerini (Organization, WebSite, Article, Product) kritik şablonlara ekleyin. Dahili linkler için breadcrumb + ilgili içerik modülleri.\n` +
-      `**90 Gün:** İçerik takvimi: uzun kuyruk konularda haftada 2 yeni yazı. Eski içeriklerde güncelleme turu (tarih, istatistik, görsel, dahili link).\n\n` +
-      `## ✅ Kontrol Listesi\n` +
-      `- [ ] Robots.txt ve sitemap.xml erişilebilir\n` +
-      `- [ ] Her sayfada 1 adet H1 ve mantıklı H2-H3 hiyerarşisi\n` +
-      `- [ ] Mobil uyumluluk ve CLS ≤ 0.1\n` +
-      `- [ ] 404 ve 301 yönlendirme kuralları güncel\n` +
-      `- [ ] Dahili linklerde anlaşılan anchor metinleri\n\n` +
-      `## ✍️ Meta Örnekleri\n` +
-      `- **Title:** {Ana Anahtar Kelime} | {Marka}\n` +
-      `- **Description:** {Kısa değer önerisi}. {1-2 fayda}. Hemen keşfedin.\n\n` +
-      `## 📌 İstem\n` +
-      `${p.trim()}` +
-      contextNote
+    // Hreflang / i18n
+    addIssue(
+      'Hreflang ve uluslararası yapı doğrulaması',
+      'Yanlış/eksik hreflang etiketi yanlış bölgeye indekslenmeye yol açabilir.',
+      ['Dil-bölge eşleşmelerini belirleyin (tr-TR, en-US...).', 'Sayfalar arası karşılıklı hreflang ekleyin.', 'Canonical ve alternates uyumunu kontrol edin.'],
+      user?.membershipType === 'Advanced'
+        ? {
+            title: 'Hreflang örneği',
+            language: 'html',
+            code: `<link rel="alternate" href="https://example.com/tr/" hreflang="tr-TR" />
+<link rel="alternate" href="https://example.com/en/" hreflang="en-US" />
+<link rel="alternate" href="https://example.com/" hreflang="x-default" />`,
+            note: 'Tüm dil versiyonlarında karşılıklı olmalı.'
+          }
+        : undefined
     );
+
+    const roadmap = {
+      d30: ['Hız ve başlık yapısı (H1/H2) düzenlemeleri', 'XML sitemap üretimi ve Search Console'a gönderim', 'Öncelikli sayfalar için meta title/description standardizasyonu'],
+      d60: ['İç bağlantı (topic cluster) yapısının kurulması', 'OG/Twitter Card ve structured data eklenmesi', 'Uluslararası yapı (hreflang) testleri'],
+      d90: ['İçerik takvimi ve uzun kuyruk stratejisi', 'Yerelleştirilmiş landing sayfaları', 'Düzenli Core Web Vitals takibi'],
+    };
+
+    return {
+      quickWins,
+      issues,
+      snippets: user?.membershipType === 'Advanced' ? snippets : undefined,
+      roadmap,
+      notes: ['Bu öneriler son rapor ve kontrol ızgarasına göre otomatik üretildi.'],
+    };
   };
 
-  const handleAIPrompt = async (customPrompt?: string) => {
-    const finalPrompt = (customPrompt ?? prompt).trim();
-    if (!finalPrompt || !user) return;
+  const callOpenAI = async (): Promise<AIStruct> => {
+    const apiKey = (import.meta as any).env?.VITE_OPENAI_API_KEY || (window as any).OPENAI_API_KEY;
+    if (!apiKey) return offlineGenerate();
 
-    if (gated) {
-      alert('Bu özellik Pro ve Advanced üyelerde mevcuttur.');
-      return;
+    const body = {
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are a senior SEO assistant. Return concise, actionable output in JSON with fields quickWins[], issues[], snippets[] (optional), roadmap{d30[],d60[],d90[]}, notes[]. Use Turkish.' },
+        { role: 'user', content: buildUserPrompt() },
+      ],
+      temperature: 0.3,
+    };
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) return offlineGenerate();
+    const data = await resp.json();
+    const txt: string = data?.choices?.[0]?.message?.content || '';
+    try {
+      const parsed: AIStruct = JSON.parse(txt);
+      return parsed?.issues || parsed?.quickWins || parsed?.roadmap ? parsed : offlineGenerate();
+    } catch {
+      return offlineGenerate();
     }
-
-    setLoading(true);
-    setAiResponse('');
-
-    // MOCK: Gerçek API entegrasyonu hazır olana kadar simüle ediyoruz.
-    setTimeout(() => {
-      const response = pickMock(finalPrompt);
-      setAiResponse(response);
-
-      const item: ChatItem = {
-        id: Date.now().toString(),
-        prompt: finalPrompt,
-        response,
-        createdAt: new Date().toISOString(),
-        contextScore: latestReport?.score,
-      };
-      saveHistory(item);
-      setLoading(false);
-    }, 1600);
   };
+
+  const onGenerate = async () => {
+    if (!user) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await callOpenAI();
+      setResult(res);
+      saveHistory(res, prompt || '(boş)');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Membership views
+  if (!user) {
+    return <div className="p-6 bg-white rounded-lg border">Önce giriş yapın.</div>;
+  }
+
+  if (user.membershipType === 'Free') {
+    return (
+      <div className="bg-white rounded-lg border p-8 text-center space-y-4">
+        <div className="inline-flex items-center gap-2 text-gray-700">
+          <Lock className="h-5 w-5" />
+          <span className="font-medium">SEO Önerileri</span>
+        </div>
+        <p className="text-gray-600">Bu özellik <b>Pro</b> ve <b>Advanced</b> paketlerde kullanılabilir.</p>
+        <button
+          onClick={() => onOpenBilling?.()}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+        >
+          <Rocket className="h-4 w-4" /> Planını Yükselt
+        </button>
+      </div>
+    );
+  }
+
+  const isAdvanced = user.membershipType === 'Advanced';
 
   return (
     <div className="space-y-8">
-      {/* Son Rapor Özetli Öneriler */}
-      {latestReport && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-            <Lightbulb className="h-6 w-6 text-yellow-500 mr-2" />
-            SEO Önerileri (Son Rapor)
-          </h2>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Güçlü Yönler */}
-            <div>
-              <h3 className="text-lg font-medium text-green-600 mb-4 flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Güçlü Yönleriniz
-              </h3>
-              <div className="space-y-3">
-                {latestReport.positives.map((positive, index) => (
-                  <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-green-800">{positive}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* İyileştirme Alanları */}
-            <div>
-              <h3 className="text-lg font-medium text-red-600 mb-4 flex items-center">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                İyileştirme Alanları
-              </h3>
-              <div className="space-y-3">
-                {latestReport.negatives.map((negative, index) => (
-                  <div key={index} className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <AlertCircle className="h-5 w-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-red-800">{negative}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Pro upsell banner */}
+      {!isAdvanced && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start justify-between">
+          <div className="flex items-start gap-2">
+            <Info className="h-5 w-5 text-indigo-600" />
+            <p className="text-sm text-indigo-900">
+              <b>Advanced</b> pakete geçerek öneriler için <b>otomatik kod/snippet</b> alabilir ve daha hızlı uygulayabilirsiniz.
+            </p>
           </div>
-
-          {/* Detaylı Öneri Kartları */}
-          <div className="mt-8">
-            <h3 className="text-lg font-medium text-blue-600 mb-4 flex items-center">
-              <Sparkles className="h-5 w-5 mr-2" />
-              Detaylı Öneriler
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {latestReport.suggestions.map((suggestion, index) => (
-                <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5 flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <p className="text-sm text-blue-800">{suggestion}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <button
+            onClick={() => onOpenBilling?.()}
+            className="inline-flex items-center gap-2 text-indigo-700 hover:text-indigo-900"
+          >
+            Plan / Ödeme <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      {/* Yapay Zeka SEO Asistanı */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-          <Sparkles className="h-6 w-6 text-purple-500 mr-2" />
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+          <Sparkles className="h-6 w-6 text-purple-600" />
           Yapay Zeka SEO Asistanı
         </h2>
 
-        {gated && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-              <p className="text-sm text-yellow-800">
-                Bu özellik Pro ve Advanced üyelerde mevcuttur. Üyeliğinizi yükseltin.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Hızlı Komutlar */}
-        <div className="mb-4">
-          <p className="block text-sm font-medium text-gray-700 mb-2">Hızlı komutlar</p>
-          <div className="flex flex-wrap gap-2">
-            {quickPrompts.map((qp, i) => (
-              <button
-                key={i}
-                onClick={() => setPrompt(qp)}
-                className="text-xs md:text-sm px-3 py-1.5 rounded-full border border-gray-300 hover:border-gray-400 bg-white"
-                disabled={gated}
-              >
-                {qp}
-              </button>
-            ))}
-          </div>
+        {/* Quick commands */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[
+            'Eksik başlık etiketleri ve zayıf iç bağlantılar için 10 maddelik eylem planı yaz',
+            'Sayfa hızı ve Core Web Vitals için 30-60-90 günlük iyileştirme planı çıkar',
+            'Site genelinde meta title/description standartlarını ve örnek şablonları öner',
+            'Sitemap, robots.txt ve structured data için kontrol listesi oluştur',
+            'Blog içerikleri için uzun kuyruk anahtar kelime stratejisi ve içerik takvimi öner',
+          ].map((q) => (
+            <button
+              key={q}
+              onClick={() => setPrompt(q)}
+              className="px-3 py-2 rounded-full border hover:bg-gray-50 text-sm"
+            >
+              {q}
+            </button>
+          ))}
         </div>
 
-        {/* Bağlam */}
-        {contextFromReport && (
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
-            <p className="text-xs text-gray-600">
-              <strong>Rapor bağlamı:</strong> {contextFromReport}
-            </p>
-          </div>
-        )}
+        {/* Report context */}
+        <div className="bg-gray-50 border rounded p-3 text-sm text-gray-700 mb-4">
+          <span className="font-medium">Rapor bağlamı:</span>{' '}
+          {reportSummary || 'Son rapor bulunamadı.'}
+        </div>
 
-        <div className="space-y-4">
-          {/* Prompt alanı */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              SEO sorunuz veya ihtiyacınız nedir?
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Örnek: Ana sayfamda H1 etiketi yok. Hızlı bir düzeltme planı ve kontrol listesi hazırlar mısın?"
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-              disabled={gated}
+        {/* Checks grid (compact) */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+          {checks.map(c => (
+            <div key={c.id} className="flex items-center gap-2 text-sm">
+              {c.status === 'pass' ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              ) : c.status === 'fail' ? (
+                <AlertTriangle className="h-4 w-4 text-rose-600" />
+              ) : (
+                <Lightbulb className="h-4 w-4 text-amber-600" />
+              )}
+              <span className="text-gray-800">{c.title}</span>
+              <span className="text-gray-500">• {c.status}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Prompt */}
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          SEO sorunuz veya ihtiyacınız nedir?
+        </label>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={4}
+          placeholder="Örnek: Ana sayfamda H1 etiketi yok. Hızlı bir düzeltme planı ve kontrol listesi hazırlar mısın?"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
+        />
+
+        <div className="flex items-center justify-between mb-4">
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300"
+              checked={includeReport}
+              onChange={(e) => setIncludeReport(e.target.checked)}
             />
-          </div>
+            Raporu Dahil Et
+          </label>
 
-          {/* Butonlar */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => handleAIPrompt()}
-              disabled={loading || !prompt.trim() || gated}
-              className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              <span>{loading ? 'Analiz ediliyor...' : 'Önerileri Al'}</span>
-            </button>
-
-            {!gated && latestReport && (
-              <button
-                onClick={() =>
-                  handleAIPrompt(
-                    `${prompt || 'Site genel SEO iyileştirmeleri'}\n\nRapor Özetine Göre: ${contextFromReport}`
-                  )
-                }
-                disabled={loading}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Lightbulb className="h-4 w-4" />
-                <span>Raporu Dahil Et</span>
-              </button>
-            )}
-          </div>
-
-          {/* AI Yanıtı */}
-          {aiResponse && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900 flex items-center">
-                  <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
-                  Yapay Zeka Önerileri
-                </h4>
-                <button
-                  onClick={() => handleCopy(aiResponse, 'current')}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
-                >
-                  {copied === 'current' ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                  <span className="text-sm">{copied === 'current' ? 'Kopyalandı!' : 'Kopyala'}</span>
-                </button>
-              </div>
-              <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap">
-                {aiResponse}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Geçmiş */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <History className="h-6 w-6 text-gray-500 mr-2" />
-            Asistan Geçmişi
-          </h2>
-          {history.length > 0 && (
-            <button
-              onClick={clearHistory}
-              className="flex items-center space-x-1 text-red-600 hover:text-red-700 text-sm"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Geçmişi Temizle</span>
-            </button>
-          )}
+          <button
+            onClick={onGenerate}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-60"
+          >
+            {loading ? <Loader className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Önerileri Al
+          </button>
         </div>
 
-        {history.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-600">
-            Henüz geçmiş yok. Bir soru sorun ve öneriler alın!
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {history.slice(0, 10).map((item) => (
-              <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm text-gray-500">
-                    {new Date(item.createdAt).toLocaleString('tr-TR')}
-                    {typeof item.contextScore === 'number' && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-                        Skor: {item.contextScore}
-                      </span>
-                    )}
+        {/* Results */}
+        {result && (
+          <div className="space-y-6">
+            {result.quickWins?.length ? (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Hızlı Kazanımlar</h3>
+                <ul className="list-disc ml-5 text-gray-800 space-y-1">
+                  {result.quickWins.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              </div>
+            ) : null}
+
+            {result.issues?.length ? (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Sorunlar ve Çözümler</h3>
+                <div className="space-y-3">
+                  {result.issues.map((it, i) => (
+                    <div key={i} className="border rounded p-3">
+                      <div className="font-medium text-gray-900">{it.title}</div>
+                      {it.why && <div className="text-sm text-gray-700 mt-1">{it.why}</div>}
+                      {it.how?.length ? (
+                        <ul className="list-disc ml-5 text-sm text-gray-800 mt-2 space-y-1">
+                          {it.how.map((h, j) => <li key={j}>{h}</li>)}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {isAdvanced && result.snippets?.length ? (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Kod Snippet'leri</h3>
+                <div className="space-y-3">
+                  {result.snippets.map((s, i) => (
+                    <div key={i} className="border rounded p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-gray-900">{s.title}</div>
+                        <button
+                          onClick={() => copy(`snip-${i}`, s.code)}
+                          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                        >
+                          {copiedKey === `snip-${i}` ? <Check className="h-4 w-4 text-emerald-600" /> : <ClipboardCopy className="h-4 w-4" />}
+                          {copiedKey === `snip-${i}` ? 'Kopyalandı' : 'Kopyala'}
+                        </button>
+                      </div>
+                      <pre className="mt-2 bg-gray-50 border rounded p-3 text-xs overflow-x-auto">
+{`${s.code}`}
+                      </pre>
+                      {s.note && <div className="text-xs text-gray-600 mt-2">{s.note}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {result.roadmap && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">30-60-90 Gün Yol Haritası</h3>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="border rounded p-3">
+                    <div className="font-medium">30 Gün</div>
+                    <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
+                      {result.roadmap?.d30?.map((x, i) => <li key={i}>{x}</li>)}
+                    </ul>
                   </div>
-                  <button
-                    onClick={() => handleCopy(item.response, item.id)}
-                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
-                  >
-                    {copied === item.id ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                    <span className="text-sm">{copied === item.id ? 'Kopyalandı!' : 'Kopyala'}</span>
-                  </button>
-                </div>
-                <p className="text-sm text-gray-700 mb-2">
-                  <span className="font-medium text-gray-900">Prompt:</span> {item.prompt}
-                </p>
-                <div className="text-sm text-gray-800 whitespace-pre-wrap bg-gray-50 p-3 rounded">
-                  {item.response}
+                  <div className="border rounded p-3">
+                    <div className="font-medium">60 Gün</div>
+                    <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
+                      {result.roadmap?.d60?.map((x, i) => <li key={i}>{x}</li>)}
+                    </ul>
+                  </div>
+                  <div className="border rounded p-3">
+                    <div className="font-medium">90 Gün</div>
+                    <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
+                      {result.roadmap?.d90?.map((x, i) => <li key={i}>{x}</li>)}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
+
+            {result.notes?.length ? (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Notlar</h3>
+                <ul className="list-disc ml-5 text-sm text-gray-800 space-y-1">
+                  {result.notes.map((n, i) => <li key={i}>{n}</li>)}
+                </ul>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="bg-white rounded-lg border p-6">
+          <h3 className="font-semibold text-gray-900 mb-3">Geçmiş</h3>
+          <div className="space-y-2">
+            {history.map(h => (
+              <div key={h.id} className="border rounded p-3">
+                <div className="text-xs text-gray-500">{new Date(h.at).toLocaleString('tr-TR')}</div>
+                <div className="text-sm text-gray-800 mt-1 line-clamp-2">Prompt: {h.prompt}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
