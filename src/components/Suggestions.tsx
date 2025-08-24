@@ -15,6 +15,20 @@ import {
   Lock,
 } from 'lucide-react';
 
+// --- OpenAI key helpers ---
+const OPENAI_KEY_STORAGE = 'weeme_openai_key';
+
+function getOpenAIKey(): string | undefined {
+  // Priority: Vite env -> localStorage -> window var (fallback)
+  const viteKey = (import.meta as any).env?.VITE_OPENAI_API_KEY as string | undefined;
+  if (viteKey && viteKey.trim()) return viteKey.trim();
+  const ls = localStorage.getItem(OPENAI_KEY_STORAGE) || '';
+  if (ls.trim()) return ls.trim();
+  const win = (window as any).OPENAI_API_KEY as string | undefined;
+  if (win && win.trim()) return win.trim();
+  return undefined;
+}
+
 type AIStruct = {
   quickWins?: string[];
   issues?: Array<{ title: string; why?: string; how?: string[] }>;
@@ -214,7 +228,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   };
 
   const callOpenAI = async (): Promise<AIStruct> => {
-    const apiKey = (import.meta as any).env?.VITE_OPENAI_API_KEY || (window as any).OPENAI_API_KEY;
+    const apiKey = getOpenAIKey();
     if (!apiKey) return offlineGenerate();
 
     const body = {
@@ -488,6 +502,45 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                 <div className="text-sm text-gray-800 mt-1 line-clamp-2">Prompt: {h.prompt}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Key Modal */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-4">
+            <div className="text-lg font-semibold">OpenAI API Anahtarı</div>
+            <p className="text-sm text-gray-600">
+              Bu anahtar sadece tarayıcınızda saklanır (<code>localStorage</code>).
+              Üretimde server-side proxy önerilir.
+            </p>
+            <input
+              type="password"
+              value={tempKey}
+              onChange={(e) => setTempKey(e.target.value)}
+              placeholder="sk-... (OpenAI)"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="px-3 py-1.5 rounded-md border hover:bg-gray-50"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={() => {
+                  const v = (tempKey || '').trim();
+                  if (!v) return;
+                  localStorage.setItem(OPENAI_KEY_STORAGE, v);
+                  setShowKeyModal(false);
+                }}
+                className="px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Kaydet
+              </button>
+            </div>
           </div>
         </div>
       )}
