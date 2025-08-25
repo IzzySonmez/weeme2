@@ -56,7 +56,7 @@ app.post("/api/seo-suggestions", async (req, res) => {
 
 KRITIK KURALLAR:
 1. SADECE JSON formatında yanıt ver, hiç açıklama yapma
-2. Mevcut rapordaki eksikleri temel al ve her öneri minimum 80 kelime olsun:
+2. Mevcut rapordaki eksikleri temel al ve her öneri minimum 120 kelime olsun:
    - SPESIFIK HTML/CSS kod örneği
    - HANGİ dosyaya/bölüme ekleneceği
    - NEDEN önemli olduğu (SEO etkisi)
@@ -101,45 +101,49 @@ JSON FORMAT:
 
 KRITIK KURALLAR:
 1. SADECE JSON formatında yanıt ver, hiç açıklama yapma
-2. Her öneri minimum 80 kelime olsun ve şunları içersin:
+2. Her öneri minimum 150 kelime olsun ve şunları içersin:
    - SPESIFIK HTML/CSS kod örneği
    - HANGİ dosyaya/bölüme ekleneceği
    - NEDEN önemli olduğu (SEO etkisi)
    - NASIL test edileceği (adım adım)
-3. Genel SEO best practice'leri temel al
-4. Gerçekçi, uygulanabilir öneriler ver
+   - BEKLENEN sonuç (performans artışı, skor değişimi)
+   - ARAÇLAR (hangi araçlarla ölçüleceği)
+3. Soruya DOĞRUDAN yanıt ver, genel laflar etme
+4. SPESIFIK teknik detaylar ver (CDN konfigürasyonu, server ayarları vs)
+5. Gerçek dünya örnekleri ve case study'ler ekle
 
 JSON FORMAT:
 {
   "quickWins": [
-    "HIZLI KAZANIM 1: Detaylı açıklama, kod örneği, test yöntemi ile",
-    "HIZLI KAZANIM 2: Minimum 80 kelime, spesifik adımlar ile"
+    "HIZLI KAZANIM 1: Minimum 150 kelime, detaylı kod örneği, test yöntemi, beklenen sonuç ile",
+    "HIZLI KAZANIM 2: Spesifik teknik adımlar, araçlar, ölçüm yöntemleri ile"
   ],
   "issues": [
     {
-      "title": "Genel SEO sorunu başlığı",
-      "why": "Bu sorun neden SEO'yu etkiliyor",
+      "title": "Soruya özel spesifik problem başlığı",
+      "why": "Bu sorun neden performansı/SEO'yu nasıl etkiliyor (sayısal verilerle)",
       "how": [
-        "Adım 1: Spesifik kod örneği ile",
-        "Adım 2: Hangi dosyada yapılacağı ile",
-        "Adım 3: Nasıl test edileceği ile"
+        "Adım 1: Detaylı teknik implementasyon, kod örneği ile",
+        "Adım 2: Server/hosting konfigürasyonu, hangi dosyada yapılacağı ile",
+        "Adım 3: Test araçları ve ölçüm yöntemleri ile",
+        "Adım 4: Beklenen performans artışı ve takip metrikleri"
       ]
     }
   ],
   ${membershipType === "Advanced" ? `"snippets": [
     {
-      "title": "Kod snippet başlığı",
+      "title": "Soruya özel detaylı kod snippet başlığı",
       "language": "html/css/js",
-      "code": "Tam kod örneği",
-      "note": "Nasıl kullanılacağı ve nereye ekleneceği"
+      "code": "Tam, çalışır kod örneği (minimum 10 satır)",
+      "note": "Nasıl kullanılacağı, nereye ekleneceği, hangi dosyalar etkileneceği"
     }
   ],` : ''}
   "roadmap": {
-    "d30": ["30 günde yapılacak spesifik işler"],
-    "d60": ["60 günde yapılacak orta vadeli işler"], 
-    "d90": ["90 günde yapılacak uzun vadeli işler"]
+    "d30": ["30 günde yapılacak spesifik teknik işler (ölçülebilir hedeflerle)"],
+    "d60": ["60 günde yapılacak orta vadeli işler (performans metrikleriyle)"], 
+    "d90": ["90 günde yapılacak uzun vadeli işler (ROI ve KPI'larla)"]
   },
-  "notes": ["Önemli notlar ve uyarılar"]
+  "notes": ["Kritik teknik notlar, potansiyel riskler, alternatif yaklaşımlar"]
 }`;
 
     // Build different prompts based on mode
@@ -209,28 +213,52 @@ JSON FORMAT:
       parsed = {
         quickWins: [
           useReportBase 
-            ? `Rapordaki meta description eksikliğini giderin: <head> bölümüne <meta name='description' content='${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'siteniz'} için 150-160 karakter açıklama'> ekleyin. Bu Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir. Test: Google'da 'site:${websiteUrl || 'yourdomain.com'}' arayarak kontrol edin.`
-            : "Meta description optimize edin: Mevcut meta description'ınızı 150-160 karakter arasında, anahtar kelime içeren ve tıklamaya teşvik eden bir açıklama ile değiştirin. <head> bölümünde <meta name='description' content='Yeni açıklamanız burada'> şeklinde güncelleyin. Bu değişiklik Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir.",
+            ? `Rapordaki meta description eksikliğini HEMEN giderin: <head> bölümüne <meta name='description' content='${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'siteniz'} için 150-160 karakter açıklama'> ekleyin. Bu Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir. DETAYLI TEST: 1) Google'da 'site:${websiteUrl || 'yourdomain.com'}' arayın, 2) Search Console'da Performans > Sayfalar bölümünden CTR'yi takip edin, 3) 2-4 hafta sonra CTR artışını ölçün. BEKLENEN SONUÇ: CTR %2-5 artış, organik trafik %10-15 artış. ARAÇLAR: Google Search Console, SEMrush, Ahrefs.`
+            : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'ULUSLARARASI HIZ OPTİMİZASYONU: 1) CDN kurulumu - Cloudflare veya AWS CloudFront kullanın. Konfigürasyon: DNS ayarlarınızda CNAME kaydı ekleyin (cdn.yourdomain.com → cloudflare-endpoint). 2) Coğrafi sunucu dağıtımı - Ana sunucunuz Türkiye\'deyse, ABD/Avrupa için edge server\'lar ekleyin. 3) Gzip sıkıştırma aktif edin: .htaccess dosyasına <IfModule mod_deflate.c> SetOutputFilter DEFLATE </IfModule> ekleyin. TEST: GTmetrix\'te farklı lokasyonlardan test edin. BEKLENEN: %40-60 hız artışı, Core Web Vitals skorunda +20 puan.' 
+                : "Meta description optimize edin: Mevcut meta description'ınızı 150-160 karakter arasında, anahtar kelime içeren ve tıklamaya teşvik eden bir açıklama ile değiştirin. <head> bölümünde <meta name='description' content='Yeni açıklamanız burada'> şeklinde güncelleyin. Bu değişiklik Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir."
+              }`,
           
           useReportBase
-            ? `Rapordaki H1 eksikliğini giderin: Ana içerik alanına <h1>${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'Ana Sayfa'} - Açıklayıcı Başlık</h1> ekleyin. Her sayfada sadece 1 H1 olmalı. Test: F12 > Elements'te 'h1' arayın, tek olduğunu kontrol edin.`
-            : "H1 başlık yapısını düzenleyin: Her sayfada tek bir H1 etiketi olduğundan emin olun ve ana anahtar kelimenizi içersin. Örnek: <h1>Ana Anahtar Kelime - Sayfa Konusu</h1>. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun.",
+            ? `Rapordaki H1 eksikliğini ACIL giderin: Ana içerik alanına <h1>${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'Ana Sayfa'} - Açıklayıcı Başlık</h1> ekleyin. Her sayfada sadece 1 H1 olmalı. DETAYLI İMPLEMENTASYON: 1) Mevcut başlıkları kontrol edin: document.querySelectorAll('h1') console'da çalıştırın, 2) CSS'te h1 { font-size: 2rem; font-weight: bold; margin-bottom: 1rem; } ekleyin, 3) Anahtar kelime yoğunluğu %1-2 olsun. TEST ARAÇLARI: Screaming Frog, SEO Spider. BEKLENEN SONUÇ: Sayfa relevansında %20-30 artış, anahtar kelime sıralamasında 3-5 pozisyon yükselme.`
+            : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'GÖRSEL OPTİMİZASYONU (Uluslararası Hız İçin): 1) WebP formatına çevirin: <picture><source srcset="image.webp" type="image/webp"><img src="image.jpg" alt="açıklama"></picture>, 2) Lazy loading: <img loading="lazy" src="image.jpg">, 3) Responsive images: srcset="image-400.jpg 400w, image-800.jpg 800w" sizes="(max-width: 600px) 400px, 800px". ARAÇLAR: ImageOptim, TinyPNG. BEKLENEN: %30-50 sayfa hızı artışı, LCP skorunda 1-2 saniye iyileşme.' 
+                : "H1 başlık yapısını düzenleyin: Her sayfada tek bir H1 etiketi olduğundan emin olun ve ana anahtar kelimenizi içersin. Örnek: <h1>Ana Anahtar Kelime - Sayfa Konusu</h1>. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun."
+              }`,
           
           useReportBase
-            ? "Rapordaki alt etiket eksikliğini giderin: Tüm <img> etiketlerinize alt='Görselin açıklaması' ekleyin. Örnek: <img src='logo.jpg' alt='Şirket logosu'>. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin."
-            : "Alt etiketlerini tüm görsellere ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem görme engelliler için kritik."
+            ? "Rapordaki alt etiket eksikliğini SİSTEMATİK giderin: Tüm <img> etiketlerinize alt='Görselin açıklaması' ekleyin. DETAYLI UYGULAMA: 1) Mevcut alt eksiklerini bulun: document.querySelectorAll('img:not([alt])') ile, 2) Her görsel için 5-15 kelimelik açıklama yazın, 3) Anahtar kelime içersin ama spam olmasın. ÖRNEK: <img src='seo-analiz-raporu.jpg' alt='2024 SEO analiz raporu grafiği, organik trafik artış trendi'>. TEST: WAVE Web Accessibility Evaluator kullanın. BEKLENEN: Görsel arama trafiğinde %25-40 artış, accessibility skorunda +15 puan."
+            : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'SUNUCU LOKASYON OPTİMİZASYONU: 1) Multi-region hosting: AWS Route 53 ile geographic routing kurun, 2) Database replication: Master-slave yapısı ile veri senkronizasyonu, 3) Hreflang etiketleri: <link rel="alternate" hreflang="tr-TR" href="https://example.com/tr/">, 4) Local TLD kullanımı: .com.tr, .de, .co.uk gibi. ARAÇLAR: Pingdom, GTmetrix farklı lokasyonlardan. BEKLENEN: Global TTFB %50-70 iyileşme, uluslararası organik trafik %30-50 artış.' 
+                : "Alt etiketlerini tüm görsellere ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem görme engelliler için kritik."
+              }`
         ],
         issues: [
           {
             title: useReportBase ? "Rapordaki sitemap eksikliği" : "XML Sitemap eksikliği",
             why: useReportBase 
-              ? `Mevcut raporda sitemap eksikliği tespit edildi. Bu durum skorunuzu ${currentScore || 'mevcut seviyede'} tutarak artışını engelliyor.`
-              : "XML sitemap olmadan arama motorları sitenizin tüm sayfalarını keşfedemez ve indeksleyemez.",
+              ? `Mevcut raporda sitemap eksikliği tespit edildi. Bu durum skorunuzu ${currentScore || 'mevcut seviyede'} tutarak artışını engelliyor. Sitemap olmadan Google'ın sitenizi tam taraması 3-5 kat daha uzun sürer ve yeni sayfalarınız 2-4 hafta geç indekslenir.`
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'Uluslararası siteler için sitemap kritik çünkü: 1) Farklı dil versiyonları arasında bağlantı kurar, 2) Hreflang etiketlerini Google\'a bildirir, 3) Coğrafi hedefleme sinyali verir. Sitemap olmadan uluslararası SEO %60-80 daha az etkili olur.' 
+                  : "XML sitemap olmadan arama motorları sitenizin tüm sayfalarını keşfedemez ve indeksleyemez."
+                }`,
             how: [
-              "Sitemap.xml dosyası oluşturun: <?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>" + (websiteUrl || "https://yourdomain.com") + "</loc></url></urlset>",
-              "Dosyayı sitenizin kök dizinine yükleyin (/sitemap.xml)",
-              "Google Search Console'da Sitemaps bölümünden gönderin",
-              "robots.txt dosyasına 'Sitemap: " + (websiteUrl || "https://yourdomain.com") + "/sitemap.xml' satırını ekleyin"
+              `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'ULUSLARARASI SİTEMAP OLUŞTURMA: 1) Dil bazlı sitemap\'ler: sitemap-tr.xml, sitemap-en.xml, 2) Ana sitemap index: <?xml version="1.0"?><sitemapindex><sitemap><loc>https://example.com/sitemap-tr.xml</loc></sitemap></sitemapindex>, 3) Her URL için hreflang alternatifleri ekleyin' 
+                : "Sitemap.xml dosyası oluşturun: <?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>" + (websiteUrl || "https://yourdomain.com") + "</loc></url></urlset>"
+              }`,
+              `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'CDN entegrasyonu ile sitemap dağıtımı: Cloudflare Workers ile sitemap\'i edge lokasyonlarda cache\'leyin, böylece Google\'ın farklı bölgelerden erişimi hızlanır' 
+                : "Dosyayı sitenizin kök dizinine yükleyin (/sitemap.xml)"
+              }`,
+              `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'Bölgesel Search Console kurulumu: Her hedef ülke için ayrı GSC property oluşturun (example.com/tr/, example.com/en/), sitemap\'leri ilgili property\'lere gönderin' 
+                : "Google Search Console'da Sitemaps bölümünden gönderin"
+              }`,
+              `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'Robots.txt optimizasyonu: User-agent: * \\n Sitemap: https://example.com/sitemap-index.xml \\n Crawl-delay: 1 (uluslararası botlar için)' 
+                : "robots.txt dosyasına 'Sitemap: " + (websiteUrl || "https://yourdomain.com") + "/sitemap.xml' satırını ekleyin"
+              }`
             ]
           },
           {
@@ -250,40 +278,76 @@ JSON FORMAT:
         roadmap: {
           d30: [
             useReportBase 
-              ? `Rapordaki kritik eksikleri giderin (skor: ${currentScore || 'mevcut'} → hedef: ${Math.min(100, (currentScore || 60) + 15)})`
-              : "Meta etiketleri (title, description) tüm sayfalarda optimize edin",
+              ? `Rapordaki kritik eksikleri giderin (skor: ${currentScore || 'mevcut'} → hedef: ${Math.min(100, (currentScore || 60) + 15)}) - Günlük 2-3 saat çalışma ile ulaşılabilir`
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'ULUSLARARASI HIZ OPTİMİZASYONU 30 GÜN: 1) CDN kurulumu ve konfigürasyon (1. hafta), 2) Görsel optimizasyonu ve lazy loading (2. hafta), 3) Database query optimizasyonu (3. hafta), 4) Caching stratejisi implementasyonu (4. hafta). HEDEF: Global sayfa hızında %50 artış.' 
+                  : "Meta etiketleri (title, description) tüm sayfalarda optimize edin"
+                }`,
             useReportBase
-              ? "H1 ve alt etiket eksikliklerini tamamlayın"
-              : "H1-H6 başlık yapısını düzenleyin ve anahtar kelime optimizasyonu yapın",
+              ? "H1 ve alt etiket eksikliklerini tamamlayın - Sayfa başına 15-20 dakika sürer"
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'TEKNIK ALTYAPI: Server response time optimizasyonu, GZIP sıkıştırma, HTTP/2 aktifleştirme, critical CSS inline yapma. ARAÇLAR: New Relic, DataDog ile monitoring.' 
+                  : "H1-H6 başlık yapısını düzenleyin ve anahtar kelime optimizasyonu yapın"
+                }`,
             useReportBase
-              ? "XML sitemap oluşturup Search Console'a gönderin"
-              : "Tüm görsellere alt etiketleri ekleyin"
+              ? "XML sitemap oluşturup Search Console'a gönderin - 1-2 gün içinde indeksleme başlar"
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'MONITORING KURULUMU: Real User Monitoring (RUM) ile global performans takibi, Core Web Vitals dashboard\'u, otomatik alert sistemi kurma.' 
+                  : "Tüm görsellere alt etiketleri ekleyin"
+                }`
           ],
           d60: [
             useReportBase
-              ? "Rapordaki orta öncelikli eksikleri giderin"
-              : "İç bağlantı stratejisi kurun (topic clusters)",
+              ? "Rapordaki orta öncelikli eksikleri giderin - Haftalık progress tracking ile"
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'GELİŞMİŞ OPTİMİZASYON: Edge computing ile dynamic content caching, AI-powered image optimization, predictive prefetching, advanced compression algorithms. BEKLENEN: %70-80 performans artışı.' 
+                  : "İç bağlantı stratejisi kurun (topic clusters)"
+                }`,
             useReportBase
-              ? "Sayfa hızı optimizasyonu yapın"
-              : "Open Graph ve Twitter Card meta etiketlerini ekleyin",
-            "Core Web Vitals optimizasyonu yapın"
+              ? "Sayfa hızı optimizasyonu yapın - PageSpeed Insights skorunda +20 puan hedefi"
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'BÖLGESEL İÇERİK STRATEJİSİ: Yerel anahtar kelime araştırması, kültürel adaptasyon, local backlink building, bölgesel sosyal medya entegrasyonu.' 
+                  : "Open Graph ve Twitter Card meta etiketlerini ekleyin"
+                }`,
+            `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+              'PERFORMANS BENCHMARK: Rakip analizi ile karşılaştırma, industry standard\'ları yakalama, mobile-first indexing optimizasyonu.' 
+              : "Core Web Vitals optimizasyonu yapın"
+            }`
           ],
           d90: [
             useReportBase
-              ? `Hedef skor ${Math.min(100, (currentScore || 60) + 25)}+ için uzun vadeli strateji`
-              : "İçerik takvimi oluşturun ve düzenli blog yazıları yayınlayın",
-            "Backlink stratejisi geliştirin",
-            "Rekabetçi analiz yapıp eksik anahtar kelimeleri hedefleyin"
+              ? `Hedef skor ${Math.min(100, (currentScore || 60) + 25)}+ için uzun vadeli strateji - Aylık ROI tracking ile`
+              : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                  'GLOBAL SEO MASTERY: Multi-language content strategy, international link building, global brand awareness campaigns, cross-border e-commerce optimization. HEDEF: %100-150 uluslararası trafik artışı.' 
+                  : "İçerik takvimi oluşturun ve düzenli blog yazıları yayınlayın"
+                }`,
+            `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+              'AUTOMATION & AI: Otomatik performans optimizasyonu, AI-driven content personalization, predictive SEO analytics, machine learning ile user experience optimization.' 
+              : "Backlink stratejisi geliştirin"
+            }`,
+            `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+              'SCALE & GROWTH: Enterprise-level infrastructure, global CDN network expansion, advanced analytics ve business intelligence integration.' 
+              : "Rekabetçi analiz yapıp eksik anahtar kelimeleri hedefleyin"
+            }`
           ]
         },
         notes: [
           useReportBase
-            ? `Bu öneriler mevcut rapor analizi (skor: ${currentScore || 'bilinmiyor'}) temel alınarak hazırlandı.`
-            : "Bu öneriler genel SEO best practice'leri temel alınarak hazırlandı.",
+            ? `Bu öneriler mevcut rapor analizi (skor: ${currentScore || 'bilinmiyor'}) temel alınarak hazırlandı. Uygulama sırası kritik - önce teknik altyapı, sonra içerik optimizasyonu.`
+            : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'KRITIK UYARI: Uluslararası hız optimizasyonu kompleks bir süreçtir. Yanlış CDN konfigürasyonu SEO\'ya zarar verebilir. A/B testing ile adım adım uygulayın. Budget: $200-500/ay CDN maliyeti beklenir.' 
+                : "Bu öneriler genel SEO best practice'leri temel alınarak hazırlandı."
+              }`,
           useReportBase
-            ? "Rapordaki eksiklikleri öncelik sırasına göre uygulayın."
-            : "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün.",
-          "Google Search Console'u mutlaka kurun ve düzenli takip edin."
+            ? "Rapordaki eksiklikleri öncelik sırasına göre uygulayın. Her değişiklik sonrası 48-72 saat bekleyip etkisini ölçün."
+            : `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+                'RISK YÖNETİMİ: Backup stratejisi mutlaka olsun. Staging environment\'da test edin. Rollback planı hazırlayın. Downtime minimize etmek için maintenance window\'ları planlayın.' 
+                : "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün."
+              }`,
+          `${prompt.includes('uluslararası') || prompt.includes('hız') ? 
+            'ÖLÇÜM ARAÇLARI: Google PageSpeed Insights, GTmetrix, Pingdom, WebPageTest, Chrome DevTools, Search Console Core Web Vitals raporu. Haftalık monitoring şart.' 
+            : "Google Search Console'u mutlaka kurun ve düzenli takip edin."
+          }`
         ]
       };
     }
