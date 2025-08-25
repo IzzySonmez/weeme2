@@ -179,7 +179,7 @@ const AIContent: React.FC = () => {
 
   const callOpenAI = async (): Promise<string> => {
     try {
-      const base = (import.meta as any).env?.VITE_API_BASE || "";
+      const base = import.meta.env?.VITE_API_BASE || "http://localhost:8787";
       const url = `${base}/api/ai-content`;
       
       const body = {
@@ -205,7 +205,7 @@ const AIContent: React.FC = () => {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error('[ERROR] AI Content API error:', resp.status, errorText);
-        throw new Error('API request failed');
+        throw new Error(`API request failed: ${resp.status}`);
       }
 
       const json = await resp.json();

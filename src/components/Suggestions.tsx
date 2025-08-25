@@ -227,7 +227,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   const callOpenAI = async (): Promise<AIStruct> => {
     try {
-      const base = (import.meta as any).env?.VITE_API_BASE || "";
+      const base = import.meta.env?.VITE_API_BASE || "http://localhost:8787";
       const url = `${base}/api/seo-suggestions`;
       
       const body = {

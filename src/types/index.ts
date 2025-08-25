@@ -1,5 +1,5 @@
 // src/types/index.ts
-export type MembershipType = 'Free' | 'ProSub' | 'AdvancedSun';
+export type MembershipType = 'Free' | 'Pro' | 'Advanced';
 
 export interface User {
   id: string;

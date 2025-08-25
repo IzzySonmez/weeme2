@@ -589,7 +589,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
     const performScan = async () => {
       try {
-        const apiBase = (import.meta as any).env?.VITE_API_BASE || '';
+        const apiBase = import.meta.env?.VITE_API_BASE || 'http://localhost:8787';
         const scanUrl = `${apiBase}/api/seo-scan`;
         
         const resp = await fetch(scanUrl, {

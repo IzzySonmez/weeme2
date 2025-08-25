@@ -415,7 +415,7 @@ JSON FORMAT:
 app.post("/api/ai-content",
   aiContentLimit,
   async (req, res) => {
-    const { membershipType, platform, prompt } = req.body;
+    const { membershipType, platform, prompt, industry, audience, businessGoal, tone, includeEmojis, hashtagCount, targetLength } = req.body;
 
     if (membershipType !== "Advanced") {
       return res.status(403).json({ 
@@ -426,15 +426,39 @@ app.post("/api/ai-content",
 
     try {
       // Try AI generation
+      const systemPrompt = `Sen profesyonel bir sosyal medya içerik uzmanısın. ${platform} platformu için Türkçe içerik üret.
+
+Parametreler:
+- Platform: ${platform}
+- Sektör: ${industry || 'genel'}
+- Hedef kitle: ${audience || 'genel'}
+- Ton: ${tone || 'profesyonel'}
+- İş hedefi: ${businessGoal || 'farkındalık artırma'}
+- Emoji kullan: ${includeEmojis ? 'evet' : 'hayır'}
+- Hashtag sayısı: ${hashtagCount || 3}
+${targetLength ? `- Hedef uzunluk: ${targetLength} karakter` : ''}
+
+Lütfen bu parametrelere uygun, etkileşim odaklı bir içerik üret.`;
+
       const content = await callOpenAI([
-        { role: "system", content: "Sen profesyonel bir sosyal medya içerik uzmanısın. Türkçe içerik üret." },
-        { role: "user", content: `${platform} için şu konuda içerik üret: ${prompt}` }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt || 'Genel bir paylaşım içeriği üret' }
       ]);
 
       res.json({ ok: true, content });
     } catch (error) {
       // Fallback content
-      const fallbackContent = `🚀 ${prompt || 'Dijital pazarlama stratejisi'}\n\nBaşarılı olmak için:\n• Hedef kitlenizi tanıyın\n• Veriye dayalı kararlar alın\n• Sürekli test edin\n\nDeneyimleriniz neler? 💡\n\n#dijitalpazarlama #${platform}`;
+      const platformTemplates = {
+        linkedin: `🚀 ${prompt || 'Dijital pazarlama stratejisi'}\n\nDijital pazarlama dünyasında sürekli değişen trendleri takip etmek kritik önemde. İşte dikkat etmeniz gereken 3 ana nokta:\n\n• Veri odaklı karar verme süreçleri\n• Müşteri deneyimi optimizasyonu\n• ROI ölçümü ve analiz\n\nSizin deneyimleriniz neler? Yorumlarda paylaşın! 💡\n\n#dijitalpazarlama #seo #marketing`,
+        
+        instagram: `✨ ${prompt || 'SEO ipuçları'} ✨\n\nBugün sizlerle SEO dünyasından pratik ipuçları paylaşıyorum! 📈\n\n🎯 Anahtar kelime araştırması yaparken:\n• Uzun kuyruk kelimeleri unutmayın\n• Rakip analizi yapın\n• Kullanıcı niyetini anlayın\n\nHangi SEO aracını kullanıyorsunuz? 👇\n\n#seo #dijitalpazarlama #marketing #webdesign #googleranking`,
+        
+        twitter: `🔥 ${prompt || 'Dijital pazarlama trendi'}\n\n2024'te dikkat edilmesi gereken 3 trend:\n\n1️⃣ AI destekli içerik üretimi\n2️⃣ Voice search optimizasyonu  \n3️⃣ Video-first stratejiler\n\nHangisini daha önce denediniz? 🚀\n\n#marketing #AI #seo`,
+        
+        facebook: `👋 Dijital pazarlama topluluğu!\n\n${prompt || 'SEO stratejileri'} konusunda deneyimlerinizi merak ediyorum.\n\nÖzellikle şu konularda:\n• Organik trafik artırma yöntemleri\n• İçerik pazarlama stratejileri\n• Sosyal medya entegrasyonu\n\nSizin en etkili bulduğunuz yöntem hangisi? Deneyimlerinizi paylaşır mısınız? 💬\n\n#dijitalpazarlama #seo #marketing #topluluk`
+      };
+
+      const fallbackContent = platformTemplates[platform] || platformTemplates.linkedin;
       
       res.json({ 
         ok: true, 

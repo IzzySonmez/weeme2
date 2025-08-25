@@ -21,11 +21,25 @@ const Login: React.FC<LoginProps> = ({ mode }) => {
     return (m === 'register' || m === 'login') ? (m as Mode) : 'login';
   }, [location.search]);
 
-  const [active, setActive] = useState<Mode>(mode || urlMode);
+  const [active, setActive] = useState<Mode>(() => {
+    // İlk render'da prop varsa onu kullan, yoksa URL'den al
+    if (mode) return mode;
+    return urlMode;
+  });
 
   useEffect(() => {
-    if (mode) setActive(mode);
-  }, [mode]);
+    // Prop değişirse güncelle
+    if (mode && mode !== active) {
+      setActive(mode);
+    }
+  }, [mode, active]);
+
+  useEffect(() => {
+    // URL değişirse ve prop yoksa güncelle
+    if (!mode && urlMode !== active) {
+      setActive(urlMode);
+    }
+  }, [urlMode, active, mode]);
 
   // Login/register başarılıysa panele
   useEffect(() => {
