@@ -7,7 +7,7 @@ import {
   Loader,
   CheckCircle2,
   AlertTriangle,
-  ClipboardCopy,
+  Copy,
   Check,
   Info,
   ArrowRight,
@@ -474,7 +474,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                           onClick={() => copy(`snip-${i}`, s.code)}
                           className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
                         >
-                          {copiedKey === `snip-${i}` ? <Check className="h-4 w-4 text-emerald-600" /> : <ClipboardCopy className="h-4 w-4" />}
+                          {copiedKey === `snip-${i}` ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                           {copiedKey === `snip-${i}` ? 'Kopyalandı' : 'Kopyala'}
                         </button>
                       </div>
