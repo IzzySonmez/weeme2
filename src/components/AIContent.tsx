@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 
 type Platform = 'linkedin' | 'instagram' | 'twitter' | 'facebook';
-type Tone = 'bilgilendirici' | 'samimi' | 'profesyonel' | 'eğlenceli';
+type Tone = 'bilgilendirici' | 'samimi' | 'profesyonel' | 'eğlenceli' | 'satış_odaklı' | 'hikaye_anlatımı';
+type Industry = 'teknoloji' | 'sağlık' | 'eğitim' | 'finans' | 'eticaret' | 'gayrimenkul' | 'turizm' | 'gıda' | 'moda' | 'spor' | 'diğer';
+type Audience = 'b2b' | 'b2c' | 'genç_yetişkin' | 'orta_yaş' | 'üst_düzey_yönetici' | 'girişimci' | 'öğrenci' | 'anne_baba' | 'emekli' | 'karma';
 
 const PLATFORM_LIMITS: Record<Platform, number> = {
   twitter: 280,
@@ -49,16 +51,74 @@ const platformNames = {
 };
 
 
-const presetIdeas = [
-  'SEO ipuçları: 2024 Google algoritma güncellemeleri',
-  'Dijital pazarlama trendleri ve gelecek öngörüleri',
-  'E-ticaret dönüşüm oranı artırma stratejileri',
-  'İçerik pazarlaması ROI ölçüm yöntemleri',
-  'Sosyal medya algoritmaları nasıl çalışır?',
-  'B2B lead generation en etkili kanallar',
-  'Google Ads vs Facebook Ads: Hangisi daha karlı?',
-  'Influencer marketing bütçe optimizasyonu',
-];
+const industryPresets: Record<Industry, string[]> = {
+  teknoloji: [
+    'Yapay zeka trendleri ve iş dünyasına etkileri',
+    'Siber güvenlik ipuçları: 2024 tehditleri',
+    'Cloud computing maliyetlerini optimize etme',
+    'Mobil uygulama geliştirme best practice\'leri'
+  ],
+  sağlık: [
+    'Dijital sağlık çözümleri ve hasta deneyimi',
+    'Telemedicine\'in geleceği ve fırsatları',
+    'Sağlık sektöründe veri güvenliği',
+    'Hasta memnuniyeti artırma stratejileri'
+  ],
+  eğitim: [
+    'Online eğitim platformları karşılaştırması',
+    'Uzaktan öğrenme motivasyon teknikleri',
+    'Eğitim teknolojileri ve öğrenci başarısı',
+    'Dijital okuryazarlık önemini artırma'
+  ],
+  finans: [
+    'Kripto para yatırım stratejileri',
+    'Kişisel finans yönetimi ipuçları',
+    'Fintech trendleri ve bankacılığın geleceği',
+    'Yatırım portföyü çeşitlendirme rehberi'
+  ],
+  eticaret: [
+    'E-ticaret dönüşüm oranı artırma yöntemleri',
+    'Sosyal medya üzerinden satış stratejileri',
+    'Müşteri sadakati programları tasarlama',
+    'Kargo ve lojistik optimizasyonu'
+  ],
+  gayrimenkul: [
+    'Emlak yatırımında dikkat edilecek noktalar',
+    'Dijital pazarlama ile emlak satışı',
+    'Gayrimenkul değerleme kriterleri',
+    'Kiralama süreçlerini optimize etme'
+  ],
+  turizm: [
+    'Sürdürülebilir turizm trendleri',
+    'Sosyal medyada destinasyon pazarlama',
+    'Müşteri deneyimi ve turizm sektörü',
+    'Dijital dönüşüm ve otel işletmeciliği'
+  ],
+  gıda: [
+    'Organik gıda trendleri ve tüketici tercihleri',
+    'Restoran işletmeciliğinde dijital çözümler',
+    'Gıda güvenliği ve kalite standartları',
+    'Sosyal medyada yemek fotoğrafçılığı'
+  ],
+  moda: [
+    'Sürdürülebilir moda ve çevre bilinci',
+    'Influencer marketing moda sektöründe',
+    'E-ticaret ve moda: trendler ve fırsatlar',
+    'Kişisel stil danışmanlığı ipuçları'
+  ],
+  spor: [
+    'Fitness motivasyonu ve hedef belirleme',
+    'Spor beslenme programları rehberi',
+    'Dijital fitness uygulamaları karşılaştırması',
+    'Spor sektöründe sosyal medya stratejileri'
+  ],
+  diğer: [
+    'Kişisel marka oluşturma stratejileri',
+    'Dijital pazarlama trendleri 2024',
+    'Sosyal medya algoritmaları nasıl çalışır?',
+    'İçerik pazarlama ROI ölçüm yöntemleri'
+  ]
+};
 
 
 const AIContent: React.FC = () => {
@@ -67,6 +127,9 @@ const AIContent: React.FC = () => {
   const [platform, setPlatform] = useState<Platform>('linkedin');
   const [prompt, setPrompt] = useState('');
   const [tone, setTone] = useState<Tone>('profesyonel');
+  const [industry, setIndustry] = useState<Industry>('diğer');
+  const [audience, setAudience] = useState<Audience>('karma');
+  const [businessGoal, setBusinessGoal] = useState('');
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [hashtagCount, setHashtagCount] = useState(3);
   const [targetLength, setTargetLength] = useState(120);
@@ -105,8 +168,14 @@ const AIContent: React.FC = () => {
   const hardLimit = PLATFORM_LIMITS[platform];
   const overLimit = generatedContent && generatedContent.length > hardLimit;
 
+  const currentPresets = industryPresets[industry] || industryPresets.diğer;
 
   const selectPreset = (idea: string) => setPrompt(idea);
+  const getRandomPreset = () => {
+    const allPresets = Object.values(industryPresets).flat();
+    const randomIdea = allPresets[Math.floor(Math.random() * allPresets.length)];
+    setPrompt(randomIdea);
+  };
 
   const callOpenAI = async (): Promise<string> => {
     try {
@@ -116,6 +185,9 @@ const AIContent: React.FC = () => {
       const body = {
         platform,
         prompt: prompt.trim(),
+        industry,
+        audience,
+        businessGoal: businessGoal.trim(),
         tone,
         includeEmojis,
         hashtagCount,
@@ -220,8 +292,11 @@ const AIContent: React.FC = () => {
 
   const resetForm = () => {
     setPrompt('');
+    setBusinessGoal('');
     setGeneratedContent('');
     setTone('profesyonel');
+    setIndustry('diğer');
+    setAudience('karma');
     setIncludeEmojis(true);
     setHashtagCount(3);
     setTargetLength(120);
@@ -282,11 +357,11 @@ const AIContent: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Hazır Fikirler
+                Sektörünüze Özel Fikirler
               </label>
               <button
                 type="button"
-                onClick={() => selectPreset(presetIdeas[Math.floor(Math.random() * presetIdeas.length)])}
+                onClick={getRandomPreset}
                 className="text-xs text-purple-600 hover:text-purple-700 flex items-center space-x-1"
                 disabled={disabled}
               >
@@ -295,7 +370,7 @@ const AIContent: React.FC = () => {
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {presetIdeas.map((idea) => (
+              {currentPresets.map((idea) => (
                 <button
                   key={idea}
                   onClick={() => selectPreset(idea)}
@@ -308,8 +383,57 @@ const AIContent: React.FC = () => {
             </div>
           </div>
 
+          {/* Industry & Audience Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sektörünüz
+              </label>
+              <select
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value as Industry)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={disabled}
+              >
+                <option value="teknoloji">Teknoloji</option>
+                <option value="sağlık">Sağlık</option>
+                <option value="eğitim">Eğitim</option>
+                <option value="finans">Finans</option>
+                <option value="eticaret">E-ticaret</option>
+                <option value="gayrimenkul">Gayrimenkul</option>
+                <option value="turizm">Turizm</option>
+                <option value="gıda">Gıda & Restoran</option>
+                <option value="moda">Moda & Tekstil</option>
+                <option value="spor">Spor & Fitness</option>
+                <option value="diğer">Diğer</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hedef Kitleniz
+              </label>
+              <select
+                value={audience}
+                onChange={(e) => setAudience(e.target.value as Audience)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={disabled}
+              >
+                <option value="b2b">B2B (İş Dünyası)</option>
+                <option value="b2c">B2C (Bireysel Müşteri)</option>
+                <option value="genç_yetişkin">Genç Yetişkin (18-35)</option>
+                <option value="orta_yaş">Orta Yaş (35-55)</option>
+                <option value="üst_düzey_yönetici">Üst Düzey Yönetici</option>
+                <option value="girişimci">Girişimci & Startup</option>
+                <option value="öğrenci">Öğrenci</option>
+                <option value="anne_baba">Anne & Baba</option>
+                <option value="emekli">Emekli</option>
+                <option value="karma">Karma Kitle</option>
+              </select>
+            </div>
+          </div>
+
           {/* Options */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Ton
@@ -324,6 +448,8 @@ const AIContent: React.FC = () => {
                 <option value="bilgilendirici">Bilgilendirici</option>
                 <option value="samimi">Samimi</option>
                 <option value="eğlenceli">Eğlenceli</option>
+                <option value="satış_odaklı">Satış Odaklı</option>
+                <option value="hikaye_anlatımı">Hikaye Anlatımı</option>
               </select>
             </div>
             <div>
@@ -356,6 +482,19 @@ const AIContent: React.FC = () => {
               />
               <div className="text-xs text-gray-500 mt-1">{targetLength} karakter</div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                İş Hedefi (Opsiyonel)
+              </label>
+              <input
+                type="text"
+                value={businessGoal}
+                onChange={(e) => setBusinessGoal(e.target.value)}
+                placeholder="Satış artırma, farkındalık..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={disabled}
+              />
+            </div>
           </div>
 
           {/* Content Prompt */}
@@ -371,7 +510,7 @@ const AIContent: React.FC = () => {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Örnek: Dijital pazarlama trendleri hakkında bir gönderi"
+              placeholder={`Örnek: ${currentPresets[0]}`}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               disabled={disabled}
