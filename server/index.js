@@ -202,20 +202,20 @@ app.post("/api/seo-scan", async (req, res) => {
       const fallbackReport = {
         score: Math.floor(Math.random() * 30) + 50, // 50-80 range
         positives: [
-          "Site erişilebilir durumda",
-          "HTTPS protokolü kullanılıyor",
-          "Temel web standartlarına uygun"
+          "Site erişilebilir durumda ve temel HTTP yanıtları doğru şekilde çalışıyor",
+          "HTTPS protokolü aktif olarak kullanılıyor, bu da güvenlik ve SEO için olumlu",
+          "Temel web standartlarına uygun görünüyor ve tarayıcılar tarafından düzgün yorumlanıyor"
         ],
         negatives: [
-          "Detaylı analiz yapılamadı",
-          "HTML içeriği tam alınamadı",
-          "Meta etiketler kontrol edilemedi"
+          "Detaylı HTML analizi yapılamadı - sitenin tam yapısı değerlendirilemedi",
+          "HTML içeriği tam olarak alınamadı, bu nedenle başlık yapısı ve meta etiketler kontrol edilemedi",
+          "Meta etiketler, Open Graph verileri ve structured data kontrol edilemedi"
         ],
         suggestions: [
-          "Site içeriğini manuel olarak kontrol edin",
-          "Meta title ve description ekleyin",
-          "H1-H6 başlık yapısını düzenleyin",
-          "Alt etiketlerini görsellerinize ekleyin"
+          "Site içeriğini manuel olarak kontrol edin: Ana sayfanızın kaynak kodunu görüntüleyin (Ctrl+U) ve title, meta description, H1 etiketlerinin varlığını kontrol edin. Eksik olanları hemen ekleyin.",
+          "Meta title ve description ekleyin: Her sayfaya benzersiz, 50-60 karakter title ve 150-160 karakter description yazın. Ana sayfanız için: <title>Markanız - Ana Hizmetiniz | Şehir</title> formatını kullanın.",
+          "H1-H6 başlık yapısını düzenleyin: Her sayfada tek bir H1 olsun, ardından H2, H3 şeklinde hiyerarşik sıralama yapın. H1'de ana anahtar kelimenizi kullanın.",
+          "Alt etiketlerini tüm görsellerinize ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem erişilebilirlik için kritik."
         ],
         reportData: {
           metaTags: false,
