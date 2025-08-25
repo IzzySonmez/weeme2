@@ -589,14 +589,14 @@ app.post("/api/ai-content", async (req, res) => {
       });
     }
 
-    const { platform, prompt, tone, includeEmojis, hashtagCount, targetLength, characterLimit } = req.body || {};
+    const { platform, prompt, industry, audience, businessGoal, tone, includeEmojis, hashtagCount, targetLength, characterLimit } = req.body || {};
 
     if (!platform || !prompt) {
       console.error("[ERROR] Missing required fields:", { platform, prompt: !!prompt });
       return res.status(400).json({ error: "Missing platform or prompt" });
     }
 
-    console.log("[INFO] AI Content generation request:", { platform, tone, includeEmojis, hashtagCount, targetLength });
+    console.log("[INFO] AI Content generation request:", { platform, industry, audience, tone, includeEmojis, hashtagCount, targetLength });
 
     // Platform-specific system prompts
     const platformSpecs = {
@@ -630,6 +630,35 @@ app.post("/api/ai-content", async (req, res) => {
       }
     };
 
+    // Industry-specific expertise
+    const industryExpertise = {
+      teknoloji: "Yazılım geliştirme, AI/ML, siber güvenlik, cloud computing, fintech, SaaS, mobil uygulamalar",
+      sağlık: "Telemedicine, dijital sağlık, hasta deneyimi, sağlık teknolojileri, medikal cihazlar, wellness",
+      eğitim: "EdTech, online öğrenme, LMS, öğrenci engagement, dijital okuryazarlık, uzaktan eğitim",
+      finans: "Fintech, blockchain, kripto, yatırım stratejileri, kişisel finans, banking, insurance",
+      eticaret: "E-commerce, dropshipping, marketplace, conversion optimization, customer journey, omnichannel",
+      gayrimenkul: "PropTech, emlak yatırımı, dijital pazarlama, CRM, virtual tours, market analizi",
+      turizm: "Travel tech, booking systems, customer experience, destination marketing, hospitality",
+      gıda: "Food tech, restaurant management, delivery apps, food safety, organic trends, culinary",
+      moda: "Fashion tech, sustainable fashion, e-commerce, influencer marketing, trend forecasting",
+      spor: "Sports tech, fitness apps, wearables, sports marketing, athlete branding, fan engagement",
+      diğer: "Genel dijital pazarlama, SEO, sosyal medya, content marketing, brand building"
+    };
+
+    // Audience-specific language and approach
+    const audienceApproach = {
+      b2b: "ROI odaklı, data-driven, industry jargon kullan, business case'ler ver, professional network",
+      b2c: "Emotion-driven, benefit odaklı, günlük dil kullan, lifestyle benefits, personal stories",
+      genç_yetişkin: "Trend-aware, social media native, informal dil, meme references, career growth",
+      orta_yaş: "Practical, family-oriented, stability focused, proven solutions, work-life balance",
+      üst_düzey_yönetici: "Strategic, high-level insights, leadership focus, industry trends, executive language",
+      girişimci: "Growth-focused, innovation-driven, risk-taking, startup ecosystem, scaling strategies",
+      öğrenci: "Educational, budget-conscious, career-oriented, learning resources, skill development",
+      anne_baba: "Family-focused, safety-oriented, time-saving solutions, child development, parenting tips",
+      emekli: "Leisure-focused, health-conscious, simple explanations, traditional values, community",
+      karma: "Inclusive language, broad appeal, multiple perspectives, universal benefits"
+    };
+
     const spec = platformSpecs[platform];
     if (!spec) {
       return res.status(400).json({ error: "Unsupported platform" });
@@ -640,10 +669,12 @@ app.post("/api/ai-content", async (req, res) => {
       profesyonel: "Kurumsal, ciddi, uzman dili kullan. İstatistik ve veri ekle. Formal üslup.",
       bilgilendirici: "Eğitici, net, adım adım açıklayıcı. Pratik bilgiler ver. Öğretici ton.",
       samimi: "Sıcak, yakın, günlük konuşma dili. Kişisel deneyimler ekle. Dostça yaklaşım.",
-      eğlenceli: "Hafif mizahi, enerjik, yaratıcı. Eğlenceli örnekler kullan. Pozitif enerji."
+      eğlenceli: "Hafif mizahi, enerjik, yaratıcı. Eğlenceli örnekler kullan. Pozitif enerji.",
+      satış_odaklı: "Persuasive, action-oriented, benefit-focused. CTA güçlü olsun. Urgency yarat.",
+      hikaye_anlatımı: "Narrative-driven, emotional connection, personal stories, journey-based content."
     };
 
-    const systemPrompt = `Sen dünya çapında tanınmış bir dijital pazarlama ve SEO uzmanısın. ${platform.toUpperCase()} için içerik üretiyorsun.
+    const systemPrompt = `Sen dünya çapında tanınmış bir dijital pazarlama ve SEO uzmanısın. ${platform.toUpperCase()} için ${industry} sektöründe ${audience} hedef kitlesine yönelik içerik üretiyorsun.
 
 PLATFORM ÖZELLİKLERİ:
 - Hedef Kitle: ${spec.audience}
@@ -652,15 +683,25 @@ PLATFORM ÖZELLİKLERİ:
 - Karakter Sınırı: ${characterLimit}
 - Ton: ${toneStyles[tone]}
 
+SEKTÖR UZMANLIGI:
+${industryExpertise[industry] || industryExpertise.diğer}
+
+HEDEF KİTLE YAKLAŞIMI:
+${audienceApproach[audience] || audienceApproach.karma}
+
+${businessGoal ? `İŞ HEDEFİ: ${businessGoal} - Bu hedefe yönelik içerik üret` : ''}
+
 İÇERİK KURALLARI:
 1. SADECE içeriği döndür, açıklama yapma
 2. ${characterLimit} karakter sınırını aşma
 3. ${includeEmojis ? 'Uygun emojiler kullan' : 'Emoji kullanma'}
 4. ${hashtagCount} adet hashtag ekle: ${spec.hashtags} listesinden seç
 5. Platform-specific CTA ekle: ${spec.cta}
-6. Dijital pazarlama/SEO uzmanı gibi konuş
-7. Pratik, uygulanabilir bilgiler ver
-8. Güncel trendleri ve best practice'leri dahil et
+6. ${industry} sektörü uzmanı gibi konuş
+7. ${audience} kitlesine uygun dil ve yaklaşım kullan
+8. Pratik, uygulanabilir bilgiler ver
+9. Güncel trendleri ve best practice'leri dahil et
+10. Sektöre özel terminoloji ve örnekler kullan
 
 ${platform === 'twitter' && targetLength ? `TWITTER ÖZELİ: ${targetLength} karakter hedefle, kısa ve etkili ol.` : ''}
 
@@ -670,11 +711,11 @@ ${platform === 'twitter' && targetLength ? `TWITTER ÖZELİ: ${targetLength} kar
 - CTA (etkileşim çağrısı)
 - Hashtag'ler
 
-UZMANLIK ALANLARIN: SEO, Google Ads, Facebook Ads, İçerik Pazarlama, Sosyal Medya Pazarlama, E-ticaret, Analytics, Conversion Optimization, Email Marketing, Influencer Marketing`;
+UZMANLIK ALANLARIN: ${industryExpertise[industry]}, SEO, Google Ads, Facebook Ads, İçerik Pazarlama, Sosyal Medya Pazarlama, Analytics, Conversion Optimization`;
 
     const messages = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Konu: ${prompt}\n\nBu konu hakkında ${platform} için ${tone} tonunda, dijital pazarlama uzmanı perspektifinden içerik üret. Pratik ipuçları, güncel trendler ve uygulanabilir stratejiler dahil et.` }
+      { role: "user", content: `Konu: ${prompt}\n\nBu konu hakkında ${platform} için ${industry} sektöründe ${audience} hedef kitlesine yönelik ${tone} tonunda içerik üret. ${businessGoal ? `İş hedefi: ${businessGoal}` : ''} Sektöre özel terminoloji, pratik ipuçları ve güncel trendler dahil et.` }
     ];
 
     const body = {
@@ -732,5 +773,4 @@ app.listen(PORT, () => {
   if (OPENAI_KEY) {
     console.log(`[DEBUG] API Key starts with: ${OPENAI_KEY.substring(0, 7)}...`);
   }
-}
-)
+});
