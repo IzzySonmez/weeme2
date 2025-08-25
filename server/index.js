@@ -732,3 +732,5 @@ app.listen(PORT, () => {
   if (OPENAI_KEY) {
     console.log(`[DEBUG] API Key starts with: ${OPENAI_KEY.substring(0, 7)}...`);
   }
+}
+)
