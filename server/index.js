@@ -7,11 +7,11 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { body, validationResult, query } from "express-validator";
-import { config } from 'dotenv';
+import dotenv from 'dotenv';
 import crypto from 'crypto';
 
 // Load environment variables
-config({ path: '.env.local' });
+dotenv.config({ path: '.env.local' });
 
 const app = express();
 
