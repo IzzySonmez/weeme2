@@ -489,44 +489,54 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         {/* Results */}
         {result && (
           <div className="space-y-6">
-            {result.quickWins?.length ? (
+            {Array.isArray(result.quickWins) && result.quickWins.length > 0 && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Hızlı Kazanımlar</h3>
                 <ul className="list-disc ml-5 text-gray-800 space-y-1">
-                  {result.quickWins.map((w, i) => <li key={i}>{w}</li>)}
+                  {result.quickWins.map((w, i) => (
+                    <li key={i}>{typeof w === 'string' ? w : 'Geçersiz öneri'}</li>
+                  ))}
                 </ul>
               </div>
-            ) : null}
+            )}
 
-            {result.issues?.length ? (
+            {Array.isArray(result.issues) && result.issues.length > 0 && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Sorunlar ve Çözümler</h3>
                 <div className="space-y-3">
                   {result.issues.map((it, i) => (
                     <div key={i} className="border rounded p-3">
-                      <div className="font-medium text-gray-900">{it.title}</div>
-                      {it.why && <div className="text-sm text-gray-700 mt-1">{it.why}</div>}
-                      {it.how?.length ? (
+                      <div className="font-medium text-gray-900">
+                        {typeof it?.title === 'string' ? it.title : 'Başlık bulunamadı'}
+                      </div>
+                      {it?.why && typeof it.why === 'string' && (
+                        <div className="text-sm text-gray-700 mt-1">{it.why}</div>
+                      )}
+                      {Array.isArray(it?.how) && it.how.length > 0 && (
                         <ul className="list-disc ml-5 text-sm text-gray-800 mt-2 space-y-1">
-                          {it.how.map((h, j) => <li key={j}>{h}</li>)}
+                          {it.how.map((h, j) => (
+                            <li key={j}>{typeof h === 'string' ? h : 'Geçersiz adım'}</li>
+                          ))}
                         </ul>
-                      ) : null}
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
-            {isAdvanced && result.snippets?.length ? (
+            {isAdvanced && Array.isArray(result.snippets) && result.snippets.length > 0 && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Kod Snippet'leri</h3>
                 <div className="space-y-3">
                   {result.snippets.map((s, i) => (
                     <div key={i} className="border rounded p-3">
                       <div className="flex items-center justify-between">
-                        <div className="font-medium text-gray-900">{s.title}</div>
+                        <div className="font-medium text-gray-900">
+                          {typeof s?.title === 'string' ? s.title : 'Kod snippet'}
+                        </div>
                         <button
-                          onClick={() => copy(`snip-${i}`, s.code)}
+                          onClick={() => copy(`snip-${i}`, s?.code || '')}
                           className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
                         >
                           {copiedKey === `snip-${i}` ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
@@ -534,49 +544,59 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                         </button>
                       </div>
                       <pre className="mt-2 bg-gray-50 border rounded p-3 text-xs overflow-x-auto">
-{`${s.code}`}
+{typeof s?.code === 'string' ? s.code : 'Kod bulunamadı'}
                       </pre>
-                      {s.note && <div className="text-xs text-gray-600 mt-2">{s.note}</div>}
+                      {s?.note && typeof s.note === 'string' && (
+                        <div className="text-xs text-gray-600 mt-2">{s.note}</div>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
-            {result.roadmap && (
+            {result.roadmap && typeof result.roadmap === 'object' && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">30-60-90 Gün Yol Haritası</h3>
                 <div className="grid sm:grid-cols-3 gap-3">
                   <div className="border rounded p-3">
                     <div className="font-medium">30 Gün</div>
                     <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
-                      {result.roadmap?.d30?.map((x, i) => <li key={i}>{x}</li>)}
+                      {Array.isArray(result.roadmap.d30) && result.roadmap.d30.map((x, i) => (
+                        <li key={i}>{typeof x === 'string' ? x : 'Geçersiz görev'}</li>
+                      ))}
                     </ul>
                   </div>
                   <div className="border rounded p-3">
                     <div className="font-medium">60 Gün</div>
                     <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
-                      {result.roadmap?.d60?.map((x, i) => <li key={i}>{x}</li>)}
+                      {Array.isArray(result.roadmap.d60) && result.roadmap.d60.map((x, i) => (
+                        <li key={i}>{typeof x === 'string' ? x : 'Geçersiz görev'}</li>
+                      ))}
                     </ul>
                   </div>
                   <div className="border rounded p-3">
                     <div className="font-medium">90 Gün</div>
                     <ul className="list-disc ml-5 text-sm text-gray-800 mt-1 space-y-1">
-                      {result.roadmap?.d90?.map((x, i) => <li key={i}>{x}</li>)}
+                      {Array.isArray(result.roadmap.d90) && result.roadmap.d90.map((x, i) => (
+                        <li key={i}>{typeof x === 'string' ? x : 'Geçersiz görev'}</li>
+                      ))}
                     </ul>
                   </div>
                 </div>
               </div>
             )}
 
-            {result.notes?.length ? (
+            {Array.isArray(result.notes) && result.notes.length > 0 && (
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Notlar</h3>
                 <ul className="list-disc ml-5 text-sm text-gray-800 space-y-1">
-                  {result.notes.map((n, i) => <li key={i}>{n}</li>)}
+                  {result.notes.map((n, i) => (
+                    <li key={i}>{typeof n === 'string' ? n : 'Geçersiz not'}</li>
+                  ))}
                 </ul>
               </div>
-            ) : null}
+            )}
           </div>
         )}
       </div>
