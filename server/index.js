@@ -664,6 +664,9 @@ app.post("/api/ai-content", async (req, res) => {
       return res.status(400).json({ error: "Unsupported platform" });
     }
 
+    const industryData = industryExpertise[industry] || industryExpertise.diğer;
+    const audienceData = audienceApproach[audience] || audienceApproach.karma;
+
     // Tone descriptions
     const toneStyles = {
       profesyonel: "Kurumsal, ciddi, uzman dili kullan. İstatistik ve veri ekle. Formal üslup.",
@@ -674,48 +677,54 @@ app.post("/api/ai-content", async (req, res) => {
       hikaye_anlatımı: "Narrative-driven, emotional connection, personal stories, journey-based content."
     };
 
-    const systemPrompt = `Sen dünya çapında tanınmış bir dijital pazarlama ve SEO uzmanısın. ${platform.toUpperCase()} için ${industry} sektöründe ${audience} hedef kitlesine yönelik içerik üretiyorsun.
+    const systemPrompt = `Sen ${industry} sektöründe uzmanlaşmış, dünya çapında tanınmış bir dijital pazarlama ve içerik stratejisti uzmanısın. ${platform.toUpperCase()} için ${audience} hedef kitlesine yönelik içerik üretiyorsun.
 
-PLATFORM ÖZELLİKLERİ:
+SEKTÖR UZMANLIĞIN:
+- Ana Alan: ${industryData.expertise}
+- İçerik Odağın: ${industryData.contentFocus}
+- ASLA Bahsetme: ${industryData.avoidTopics}
+
+HEDEF KİTLE ANALİZİN:
+- Dil Yaklaşımı: ${audienceData.language}
+- İlgi Alanları: ${audienceData.interests}
+- Sorun Noktaları: ${audienceData.painPoints}
+- İçerik Stili: ${audienceData.contentStyle}
+
+PLATFORM ÖZELLİKLERİ (${platform.toUpperCase()}):
 - Hedef Kitle: ${spec.audience}
 - İçerik Stili: ${spec.style}
 - Platform Özellikleri: ${spec.features}
 - Karakter Sınırı: ${characterLimit}
 - Ton: ${toneStyles[tone]}
 
-SEKTÖR UZMANLIGI:
-${industryExpertise[industry] || industryExpertise.diğer}
-
-HEDEF KİTLE YAKLAŞIMI:
-${audienceApproach[audience] || audienceApproach.karma}
-
 ${businessGoal ? `İŞ HEDEFİ: ${businessGoal} - Bu hedefe yönelik içerik üret` : ''}
 
-İÇERİK KURALLARI:
-1. SADECE içeriği döndür, açıklama yapma
-2. ${characterLimit} karakter sınırını aşma
-3. ${includeEmojis ? 'Uygun emojiler kullan' : 'Emoji kullanma'}
-4. ${hashtagCount} adet hashtag ekle: ${spec.hashtags} listesinden seç
-5. Platform-specific CTA ekle: ${spec.cta}
-6. ${industry} sektörü uzmanı gibi konuş
-7. ${audience} kitlesine uygun dil ve yaklaşım kullan
-8. Pratik, uygulanabilir bilgiler ver
-9. Güncel trendleri ve best practice'leri dahil et
-10. Sektöre özel terminoloji ve örnekler kullan
+KRİTİK KURALLAR:
+1. SADECE ${industry} sektörü kapsamında kal - başka sektörlerden örnek verme
+2. ${audience} kitlesinin ${audienceData.painPoints} sorunlarına odaklan
+3. ${industryData.avoidTopics} konularından ASLA bahsetme
+4. ${audienceData.contentStyle} stilinde yaz
+5. SADECE içeriği döndür, açıklama yapma
+6. ${characterLimit} karakter sınırını aşma
+7. ${includeEmojis ? 'Sektöre uygun emojiler kullan' : 'Emoji kullanma'}
+8. ${hashtagCount} adet sektöre özel hashtag ekle
+9. ${spec.cta} tarzında CTA ekle
+10. Prompt'taki konuyu ${industry} sektörü perspektifinden ele al
 
 ${platform === 'twitter' && targetLength ? `TWITTER ÖZELİ: ${targetLength} karakter hedefle, kısa ve etkili ol.` : ''}
 
-İÇERİK YAPISI:
-- Hook (dikkat çekici başlangıç)
-- Ana içerik (değer katacak bilgi/ipucu)
-- CTA (etkileşim çağrısı)
-- Hashtag'ler
+MANTIKSAL İÇERİK YAPISI:
+1. Hook: ${industry} sektöründen dikkat çekici başlangıç
+2. Ana İçerik: ${audienceData.interests} ilgi alanlarına hitap eden değerli bilgi
+3. Sektörel Örnek: ${industry} sektöründen spesifik, gerçekçi örnek
+4. CTA: ${audienceData.contentStyle} stilinde etkileşim çağrısı
+5. Hashtag: ${industry} sektörüne özel etiketler
 
-UZMANLIK ALANLARIN: ${industryExpertise[industry]}, SEO, Google Ads, Facebook Ads, İçerik Pazarlama, Sosyal Medya Pazarlama, Analytics, Conversion Optimization`;
+ÖNEMLI: İçerik tamamen ${industry} sektörü odaklı olmalı. Başka sektörlerden örnekler verme!`;
 
     const messages = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Konu: ${prompt}\n\nBu konu hakkında ${platform} için ${industry} sektöründe ${audience} hedef kitlesine yönelik ${tone} tonunda içerik üret. ${businessGoal ? `İş hedefi: ${businessGoal}` : ''} Sektöre özel terminoloji, pratik ipuçları ve güncel trendler dahil et.` }
+      { role: "user", content: `PROMPT: "${prompt}"\n\nBu konuyu ${industry} sektörü perspektifinden ele alarak ${platform} için ${audience} hedef kitlesine yönelik ${tone} tonunda içerik üret.\n\nÖNEMLİ: \n- Sadece ${industry} sektörü kapsamında kal\n- ${audienceData.interests} ilgi alanlarına hitap et\n- ${industryData.avoidTopics} konularından bahsetme\n- Gerçekçi, sektöre özel örnekler ver\n${businessGoal ? `- İş hedefi: ${businessGoal}` : ''}` }
     ];
 
     const body = {
