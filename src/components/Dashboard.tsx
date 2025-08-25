@@ -593,6 +593,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         const scanUrl = `${apiBase}/api/seo-scan`;
         console.log('[DEBUG] API Base:', apiBase);
         console.log('[DEBUG] Scan URL:', scanUrl);
+        console.log('[DEBUG] Request payload:', { url: trackingCode.websiteUrl });
         
         const resp = await fetch(scanUrl, {
           method: "POST",
@@ -602,10 +603,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
         console.log('[DEBUG] Response status:', resp.status);
         console.log('[DEBUG] Response ok:', resp.ok);
+        console.log('[DEBUG] Response headers:', Object.fromEntries(resp.headers.entries()));
 
         if (!resp.ok) {
           const errorText = await resp.text();
           console.error('[DEBUG] API Error Response:', errorText);
+          console.error('[DEBUG] Full error details:', {
+            status: resp.status,
+            statusText: resp.statusText,
+            url: scanUrl,
+            payload: { url: trackingCode.websiteUrl }
+          });
           console.error('SEO scan failed:', resp.status, resp.statusText);
           // Fallback to old mock scan if API fails
           return runSEOScanOld(auto);
