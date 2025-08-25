@@ -832,15 +832,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
               <input
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                placeholder="https://ornek.com"
+                placeholder="https://example.com"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={generateTrackingCode}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                disabled={!websiteUrl.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Takip Kodu Oluştur
               </button>
+            </div>
+            
+            {/* Quick URL suggestions */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs text-gray-500">Hızlı test:</span>
+              {['https://google.com', 'https://github.com', 'https://stackoverflow.com'].map(url => (
+                <button
+                  key={url}
+                  onClick={() => setWebsiteUrl(url)}
+                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border"
+                >
+                  {url.replace('https://', '')}
+                </button>
+              ))}
             </div>
 
             {trackingCode && (
