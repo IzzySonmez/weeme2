@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { AIContent as AIContentType } from '../types';
+import type { AIContent as AIContentType } from '../types';
 import {
   Sparkles,
   Send,

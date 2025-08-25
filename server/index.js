@@ -681,7 +681,7 @@ UZMANLIK ALANLARIN: SEO, Google Ads, Facebook Ads, İçerik Pazarlama, Sosyal Me
       model: "gpt-4o-mini",
       messages,
       temperature: 0.7, // Yaratıcılık için biraz daha yüksek
-      max_tokens: Math.min(1000, Math.ceil(characterLimit / 2)), // Karakter sınırına göre ayarla
+      max_tokens: Math.min(1000, Math.ceil((characterLimit || 1000) / 2)), // Karakter sınırına göre ayarla
       presence_penalty: 0.3, // Tekrarları azalt
       frequency_penalty: 0.3 // Çeşitliliği artır
     };
