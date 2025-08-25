@@ -4,7 +4,7 @@
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import helmet from "helmet";
 import { body, validationResult, query } from "express-validator";
 import dotenv from 'dotenv';
@@ -42,6 +42,8 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
   'https://your-domain.com',
   'https://www.your-domain.com'
 ];
@@ -75,7 +77,7 @@ const createRateLimit = (windowMs, max, message, skipSuccessfulRequests = false)
     skipSuccessfulRequests,
     keyGenerator: (req) => {
       // Use IP + User-Agent for better fingerprinting
-      const ip = req.ip || req.connection.remoteAddress;
+      const ip = ipKeyGenerator(req);
       const userAgent = req.get('User-Agent') || '';
       return crypto.createHash('sha256').update(ip + userAgent).digest('hex');
     }
