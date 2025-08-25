@@ -217,7 +217,7 @@ JSON FORMAT:
           "Bu öneriler mevcut SEO skorunuz (" + (currentScore || "bilinmiyor") + ") temel alınarak hazırlandı.",
           "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün.",
           "Google Search Console'u mutlaka kurun ve düzenli takip edin."
-        }
+        ]
       };
     }
 
