@@ -239,23 +239,18 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         useReportBase,
       };
 
-      console.log('[DEBUG] Sending suggestions request:', body);
-
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      console.log('[DEBUG] Suggestions response status:', resp.status);
-
       if (!resp.ok) {
-        console.error('[DEBUG] Suggestions API error:', resp.status);
+        console.error('[ERROR] Suggestions API error:', resp.status);
         return offlineGenerate();
       }
 
       const json = await resp.json();
-      console.log('[DEBUG] Suggestions API response:', json);
       const data = json?.data;
 
       if (!data) return offlineGenerate();
@@ -265,10 +260,9 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         delete data.snippets;
       }
 
-      console.log('[DEBUG] Final suggestions data:', data);
       return data as AIStruct;
     } catch {
-      console.error('[DEBUG] Suggestions request failed, using fallback');
+      console.error('[ERROR] Suggestions request failed, using fallback');
       return offlineGenerate();
     }
   };

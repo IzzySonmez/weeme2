@@ -76,6 +76,7 @@ const Layout: React.FC<LayoutProps> = ({
               <button
                 onClick={onOpenBilling}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50"
+                aria-label="Plan ve ödeme ayarları"
               >
                 <CreditCard className="h-4 w-4" />
                 <span className="text-sm">Plan / Ödeme</span>
@@ -85,6 +86,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <button
                   onClick={onOpenDataTools}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50"
+                  aria-label="Veri araçları"
                 >
                   {/* opsiyonel veri aracı butonun varsa ikon ekleyebilirsin */}
                   <span className="text-sm">Veri</span>
@@ -94,6 +96,7 @@ const Layout: React.FC<LayoutProps> = ({
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
+                aria-label="Çıkış yap"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm">Çıkış</span>
@@ -105,7 +108,12 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Navigation */}
       {/* ÖNEMLİ: key ile membership değişince nav yeniden oluşturulsun (guard anında yansısın) */}
-      <nav key={`${user?.id}-${user?.membershipType}`} className="bg-white shadow-sm">
+      <nav 
+        key={`${user?.id}-${user?.membershipType}`} 
+        className="bg-white shadow-sm"
+        role="navigation"
+        aria-label="Ana navigasyon"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {tabs.map((tab) => {
@@ -123,6 +131,8 @@ const Layout: React.FC<LayoutProps> = ({
                   disabled={!allowed}
                   aria-current={active ? 'page' : undefined}
                   title={!allowed ? 'Bu sekme Advanced üyelerde aktif' : undefined}
+                  role="tab"
+                  aria-selected={active}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
@@ -134,7 +144,11 @@ const Layout: React.FC<LayoutProps> = ({
       </nav>
 
       {/* Main */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main 
+        className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8"
+        role="main"
+        aria-label="Ana içerik"
+      >
         {children}
       </main>
     </div>

@@ -193,9 +193,8 @@ const AIContent: React.FC = () => {
         hashtagCount,
         targetLength: platform === 'twitter' ? targetLength : null,
         characterLimit: hardLimit,
+        membershipType: user?.membershipType || "Free",
       };
-
-      console.log('[DEBUG] AI Content request:', body);
 
       const resp = await fetch(url, {
         method: "POST",
@@ -203,19 +202,17 @@ const AIContent: React.FC = () => {
         body: JSON.stringify(body),
       });
 
-      console.log('[DEBUG] AI Content response status:', resp.status);
-
       if (!resp.ok) {
-        console.error('[DEBUG] AI Content API error:', resp.status);
+        const errorText = await resp.text();
+        console.error('[ERROR] AI Content API error:', resp.status, errorText);
         throw new Error('API request failed');
       }
 
       const json = await resp.json();
-      console.log('[DEBUG] AI Content response:', json);
       
       return json?.content || 'İçerik üretilemedi.';
     } catch (error) {
-      console.error('[DEBUG] AI Content request failed:', error);
+      console.error('[ERROR] AI Content request failed:', error);
       throw error;
     }
   };
