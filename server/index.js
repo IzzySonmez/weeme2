@@ -70,6 +70,10 @@ app.post("/api/seo-suggestions", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[weeme.ai] API proxy running on http://localhost:${PORT}`);
+  console.log(`[DEBUG] OpenAI API Key configured: ${OPENAI_KEY ? 'YES' : 'NO'}`);
+  if (OPENAI_KEY) {
+    console.log(`[DEBUG] API Key starts with: ${OPENAI_KEY.substring(0, 7)}...`);
+  }
 });
 
 app.post("/api/seo-scan", async (req, res) => {

@@ -589,19 +589,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
     const performScan = async () => {
       try {
+        const apiBase = (import.meta as any).env?.VITE_API_BASE || '';
+        const scanUrl = `${apiBase}/api/seo-scan`;
+        console.log('[DEBUG] API Base:', apiBase);
+        console.log('[DEBUG] Scan URL:', scanUrl);
+        
         const resp = await fetch("/api/seo-scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: trackingCode.websiteUrl }),
         });
 
+        console.log('[DEBUG] Response status:', resp.status);
+        console.log('[DEBUG] Response ok:', resp.ok);
+
         if (!resp.ok) {
+          const errorText = await resp.text();
+          console.error('[DEBUG] API Error Response:', errorText);
           console.error('SEO scan failed:', resp.status, resp.statusText);
           // Fallback to old mock scan if API fails
           return runSEOScanOld(auto);
         }
 
         const json = await resp.json();
+        console.log('[DEBUG] API Response:', json);
         const report = json?.report;
         if (!report) {
           console.error('Invalid scan output:', json);
@@ -609,6 +620,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
           return runSEOScanOld(auto);
         }
 
+        console.log('[DEBUG] Generated report score:', report.score);
         const mockReport: SEOReport = {
           id: Date.now().toString(),
           userId: user.id,
