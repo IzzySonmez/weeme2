@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Rocket,
   Lock,
+  FileCode2,
 } from 'lucide-react';
 
 type AIStruct = {
