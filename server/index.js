@@ -29,8 +29,11 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       scriptSrc: ["'self'"],
       connectSrc: ["'self'", "https://api.openai.com"],
+      frameSrc: ["'none'"],
+      frameAncestors: ["'none'"]
     },
   },
+  crossOriginEmbedderPolicy: false,
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -272,6 +275,12 @@ const callOpenAI = async (messages, options = {}) => {
     timeout = 30000
   } = options;
 
+  // Check if API key is available and valid
+  if (!OPENAI_KEY || OPENAI_KEY.includes('placeholder') || OPENAI_KEY.includes('buraya_') || OPENAI_KEY.length < 20) {
+    console.log('[INFO] OpenAI API key not available, using fallback');
+    throw new Error('OpenAI API key not configured');
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -411,15 +420,16 @@ JSON FORMAT:
 
       console.log(`[DEBUG] Starting AI analysis for: ${url}`);
       console.log(`[DEBUG] HTML content length: ${html.length}`);
-      const aiResponse = await callOpenAI([
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ], { timeout: 25000 });
-
-      console.log(`[DEBUG] AI Response received, length: ${aiResponse.length}`);
-      // Parse and validate AI response
+      
       let report;
       try {
+        const aiResponse = await callOpenAI([
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ], { timeout: 25000 });
+
+        console.log(`[DEBUG] AI Response received, length: ${aiResponse.length}`);
+        
         let cleanedResponse = aiResponse.trim();
         if (cleanedResponse.startsWith('```json')) {
           cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -439,10 +449,9 @@ JSON FORMAT:
         }
 
         console.log(`[DEBUG] AI report parsed successfully, score: ${report.score}`);
-      } catch (parseError) {
-        securityLogger('WARN', 'AI response parsing failed', req, { error: parseError.message });
-        console.error(`[ERROR] Failed to parse AI response: ${parseError.message}`);
-        console.error(`[ERROR] Raw AI response: ${aiResponse.substring(0, 500)}...`);
+      } catch (aiError) {
+        console.log(`[INFO] AI analysis failed, using fallback: ${aiError.message}`);
+        securityLogger('INFO', 'Using fallback SEO analysis', req, { reason: aiError.message });
         
         // Fallback report
         report = {
