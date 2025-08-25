@@ -71,3 +71,60 @@ app.post("/api/seo-suggestions", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`[weeme.ai] API proxy running on http://localhost:${PORT}`);
 });
+
+app.post("/api/seo-scan", async (req, res) => {
+  try {
+    if (!OPENAI_KEY) return res.status(503).json({ error: "OPENAI_API_KEY missing" });
+
+    const { url } = req.body || {};
+    if (!url || !/^https?:\/\//.test(url)) {
+      return res.status(400).json({ error: "Invalid URL" });
+    }
+
+    // Fetch HTML (basic)
+    let html = "";
+    try {
+      const r = await fetch(url, { method: "GET" });
+      html = await r.text();
+    } catch (e) {
+      html = "";
+    }
+
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are an SEO auditor. Analyze the given site HTML and URL. Always respond with strict JSON: {score: number 0-100, positives: string[], negatives: string[], suggestions: string[], reportData: {metaTags:boolean, headings:boolean, images:boolean, performance:number, mobileOptimization:boolean, sslCertificate:boolean, pageSpeed:number, keywords:string[]}}. Use Turkish in text fields.",
+      },
+      {
+        role: "user",
+        content: `URL: ${url}\n\nHTML:\n${html.slice(0, 4000)}\n\nLütfen JSON döndür.`,
+      },
+    ];
+
+    const body = { model: "gpt-4o-mini", messages, temperature: 0.3 };
+
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_KEY}` },
+      body: JSON.stringify(body),
+    });
+
+    if (!r.ok) {
+      const text = await r.text();
+      return res.status(r.status).json({ error: "openai_error", detail: text });
+    }
+
+    const data = await r.json();
+    const txt = data?.choices?.[0]?.message?.content || "";
+
+    try {
+      const parsed = JSON.parse(txt);
+      return res.json({ ok: true, report: parsed });
+    } catch {
+      return res.status(500).json({ error: "parse_error", raw: txt });
+    }
+  } catch (e) {
+    return res.status(500).json({ error: "server_error", detail: String(e) });
+  }
+});
