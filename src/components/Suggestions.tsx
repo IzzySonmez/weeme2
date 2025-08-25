@@ -331,6 +331,23 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
     <div className="space-y-8">
       {/* Pro upsell banner */}
       {!isAdvanced && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Rocket className="h-5 w-5 text-purple-600" />
+            <div>
+              <div className="font-medium text-gray-900">Advanced'a yükselt ve kod snippet'leri al</div>
+              <div className="text-sm text-gray-600">Hazır HTML/CSS/JS kodları ile hızlıca uygula</div>
+            </div>
+            <button
+              onClick={() => onOpenBilling?.()}
+              className="ml-auto px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Yükselt
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border p-6">
         <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Sparkles className="h-6 w-6 text-purple-600" />
