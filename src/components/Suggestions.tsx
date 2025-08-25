@@ -218,50 +218,48 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   };
 
   const callOpenAI = async (): Promise<AIStruct> => {
-    // Build request for our backend proxy
-    const base = (import.meta as any).env?.VITE_API_BASE || "";
-    const url = `${base || ""}/api/seo-suggestions`.replace(/\/+$/, "").replace(/^(.*)$/, "$1"); // normalize
-
-    const body = {
-      prompt: buildUserPrompt(),
-      reportContext: includeReport ? reportSummary : "",
-      membershipType: user?.membershipType || "Free",
-    };
-
     try {
+      const base = (import.meta as any).env?.VITE_API_BASE || "";
+      const url = `${base}/api/seo-suggestions`;
+      
+      const body = {
+        prompt: buildUserPrompt(),
+        reportContext: includeReport ? reportSummary : "",
+        membershipType: user?.membershipType || "Free",
+        websiteUrl: latestReport?.websiteUrl || "",
+        currentScore: latestReport?.score || 0,
+      };
+
+      console.log('[DEBUG] Sending suggestions request:', body);
+
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
+      console.log('[DEBUG] Suggestions response status:', resp.status);
+
       if (!resp.ok) {
-        // If backend blocks Free or any error occurs, use offline fallback
+        console.error('[DEBUG] Suggestions API error:', resp.status);
         return offlineGenerate();
       }
 
       const json = await resp.json();
+      console.log('[DEBUG] Suggestions API response:', json);
       const data = json?.data;
 
       if (!data) return offlineGenerate();
 
-      // If backend passed text instead of JSON, map into AIStruct
-      if (typeof data === "string" || data.text) {
-        return {
-          quickWins: [typeof data === "string" ? data : data.text],
-          issues: [],
-          roadmap: { d30: [], d60: [], d90: [] },
-          notes: ["OpenAI yanıtı metin olarak döndü; JSON'a dönüştürülemedi."],
-        };
-      }
-
-      // Ensure Advanced users get snippets; for Pro, we can strip them if needed
+      // Ensure proper structure
       if (user?.membershipType !== "Advanced" && Array.isArray(data.snippets)) {
         delete data.snippets;
       }
 
+      console.log('[DEBUG] Final suggestions data:', data);
       return data as AIStruct;
     } catch {
+      console.error('[DEBUG] Suggestions request failed, using fallback');
       return offlineGenerate();
     }
   };

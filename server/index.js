@@ -40,7 +40,7 @@ app.post("/api/seo-suggestions", async (req, res) => {
       });
     }
 
-    const { prompt, reportContext, membershipType } = req.body || {};
+    const { prompt, reportContext, membershipType, websiteUrl, currentScore } = req.body || {};
 
     // Basic membership guard on server
     if (membershipType !== "Pro" && membershipType !== "Advanced") {
@@ -48,53 +48,76 @@ app.post("/api/seo-suggestions", async (req, res) => {
       return res.status(403).json({ error: "Not allowed for this plan" });
     }
 
-    console.log("[INFO] Making OpenAI request for membership:", membershipType);
+    console.log("[INFO] Making OpenAI suggestions request for:", membershipType, "Score:", currentScore);
 
-    // Ultra specific system prompt for actionable suggestions
-    const systemPrompt = `Sen profesyonel bir SEO uzmanısın. Verilen HTML içeriğini analiz edip SADECE JSON formatında yanıt ver.
+    // Ultra specific system prompt for SEO suggestions
+    const systemPrompt = `Sen dünya çapında tanınmış bir SEO uzmanısın. Müşterilere SADECE uygulanabilir, somut öneriler veriyorsun.
 
 KRITIK KURALLAR:
-1. SADECE JSON döndür, hiç açıklama yapma
-2. Her öneri MUTLAKA şunları içermeli:
-   - Spesifik HTML kod örneği
-   - Hangi dosyaya/bölüme ekleneceği
-   - Neden önemli olduğu
-   - Nasıl test edileceği
+1. SADECE JSON formatında yanıt ver, hiç açıklama yapma
+2. Her öneri minimum 100 kelime olsun ve şunları içersin:
+   - SPESIFIK HTML/CSS kod örneği
+   - HANGİ dosyaya/bölüme ekleneceği
+   - NEDEN önemli olduğu (SEO etkisi)
+   - NASIL test edileceği (adım adım)
+   - BEKLENEN sonuç (skor artışı vs)
+3. Önerileri öncelik sırasına göre sırala (en etkili önce)
+4. Gerçekçi, uygulanabilir öneriler ver
 
 JSON FORMAT:
 {
-  "score": number,
-  "positives": ["Spesifik pozitif özellik 1", "Spesifik pozitif özellik 2"],
-  "negatives": ["Spesifik eksiklik 1", "Spesifik eksiklik 2"],
-  "suggestions": [
-    "Meta description ekleyin: <head> bölümüne <meta name='description' content='150-160 karakter açıklama'> ekleyin. Bu Google arama sonuçlarında görünen açıklamadır. Test: Google'da 'site:yourdomain.com' yazıp kontrol edin.",
-    "H1 etiketi ekleyin: Ana içerik alanına <h1>Ana Başlık</h1> ekleyin. Her sayfada sadece 1 H1 olmalı. Test: Tarayıcıda F12 açıp Elements sekmesinde H1 arayın.",
-    "Alt etiketleri ekleyin: Tüm <img> etiketlerinize alt='Açıklama' ekleyin. Örnek: <img src='logo.jpg' alt='Şirket logosu'>. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek kontrol edin."
+  "quickWins": [
+    "HIZLI KAZANIM 1: Detaylı açıklama, kod örneği, test yöntemi ve beklenen sonuç ile",
+    "HIZLI KAZANIM 2: Minimum 100 kelime, spesifik adımlar ile"
   ],
-  "reportData": {
-    "metaTags": boolean,
-    "headings": boolean,
-    "images": boolean,
-    "performance": number,
-    "mobileOptimization": boolean,
-    "sslCertificate": boolean,
-    "pageSpeed": number,
-    "keywords": ["keyword1", "keyword2"]
-  }
-}
+  "issues": [
+    {
+      "title": "Spesifik sorun başlığı",
+      "why": "Bu sorun neden SEO'yu etkiliyor, hangi sıralama faktörünü olumsuz etkiliyor",
+      "how": [
+        "Adım 1: Spesifik kod örneği ile",
+        "Adım 2: Hangi dosyada yapılacağı ile",
+        "Adım 3: Nasıl test edileceği ile"
+      ]
+    }
+  ],
+  ${membershipType === "Advanced" ? `"snippets": [
+    {
+      "title": "Kod snippet başlığı",
+      "language": "html/css/js",
+      "code": "Tam kod örneği",
+      "note": "Nasıl kullanılacağı ve nereye ekleneceği"
+    }
+  ],` : ''}
+  "roadmap": {
+    "d30": ["30 günde yapılacak spesifik işler"],
+    "d60": ["60 günde yapılacak orta vadeli işler"], 
+    "d90": ["90 günde yapılacak uzun vadeli işler"]
+  },
+  "notes": ["Önemli notlar ve uyarılar"]
+}`;
 
-Her öneri minimum 50 kelime olmalı ve kesinlikle uygulanabilir adımlar içermeli.`;
+    // Build context-aware prompt
+    let contextPrompt = "";
+    if (reportContext) {
+      contextPrompt += `[MEVCUT DURUM]\nSite: ${websiteUrl}\nMevcut SEO Skoru: ${currentScore}/100\nRapor Özeti: ${reportContext}\n\n`;
+    }
+    
+    contextPrompt += `[KULLANICI TALEBİ]\n${prompt || "Bu sitenin SEO performansını artırmak için detaylı, uygulanabilir öneriler ver."}\n\n`;
+    contextPrompt += `[HEDEF]\nSEO skorunu artıracak, somut adımlar içeren öneriler ver. Her öneri kod örneği, test yöntemi ve beklenen sonuç içersin.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `${reportContext ? `[RAPOR BAĞLAMI]\n${reportContext}\n\n` : ""}${prompt || "Bu sitenin SEO analizini yap ve detaylı, uygulanabilir öneriler ver."}` }
+      { role: "user", content: contextPrompt }
     ];
 
     const body = {
       model: "gpt-4o-mini",
       messages,
       temperature: 0.1,
-      max_tokens: 4000
+      max_tokens: 4000,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1
     };
 
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -115,7 +138,7 @@ Her öneri minimum 50 kelime olmalı ve kesinlikle uygulanabilir adımlar içerm
     const data = await r.json();
     const content = data?.choices?.[0]?.message?.content || "";
 
-    console.log("[DEBUG] Raw OpenAI response:", content.substring(0, 500));
+    console.log("[DEBUG] Raw OpenAI suggestions response:", content.substring(0, 300) + "...");
 
     // Clean and parse JSON response
     let cleanedContent = content.trim();
@@ -131,45 +154,69 @@ Her öneri minimum 50 kelime olmalı ve kesinlikle uygulanabilir adımlar içerm
     let parsed;
     try {
       parsed = JSON.parse(cleanedContent);
-      console.log("[INFO] Successfully parsed OpenAI JSON response");
-      console.log("[DEBUG] Parsed suggestions count:", parsed.suggestions?.length || 0);
+      console.log("[INFO] Successfully parsed OpenAI suggestions JSON");
+      console.log("[DEBUG] Quick wins:", parsed.quickWins?.length || 0);
+      console.log("[DEBUG] Issues:", parsed.issues?.length || 0);
     } catch (parseError) {
-      console.error("[ERROR] Failed to parse OpenAI response as JSON:", parseError.message);
+      console.error("[ERROR] Failed to parse OpenAI suggestions as JSON:", parseError.message);
       console.error("[DEBUG] Cleaned content:", cleanedContent.substring(0, 1000));
       
-      // Return highly detailed fallback
+      // Return highly detailed fallback suggestions
       parsed = {
-        score: Math.floor(Math.random() * 30) + 60,
-        positives: [
-          "HTTPS protokolü aktif - SSL sertifikası mevcut ve güvenli bağlantı sağlanıyor",
-          "Site erişilebilir durumda - HTTP 200 yanıtı alınıyor ve sayfa düzgün yükleniyor",
-          "Temel HTML yapısı mevcut - DOCTYPE ve temel etiketler bulunuyor"
+        quickWins: [
+          "Meta description optimize edin: Mevcut meta description'ınızı 150-160 karakter arasında, anahtar kelime içeren ve tıklamaya teşvik eden bir açıklama ile değiştirin. <head> bölümünde <meta name='description' content='Yeni açıklamanız burada'> şeklinde güncelleyin. Bu değişiklik Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir. Test: Google'da 'site:" + (websiteUrl || "yourdomain.com") + "' arayarak yeni açıklamanın görünüp görünmediğini kontrol edin.",
+          
+          "H1 başlık yapısını düzenleyin: Her sayfada tek bir H1 etiketi olduğundan emin olun ve ana anahtar kelimenizi içersin. Örnek: <h1>Ana Anahtar Kelime - Sayfa Konusu</h1>. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun. Bu değişiklik sayfa konunuzun arama motorları tarafından daha iyi anlaşılmasını sağlar. Test: Tarayıcıda F12 açıp Elements sekmesinde 'h1' arayın, sadece 1 tane olmalı.",
+          
+          "Alt etiketlerini tüm görsellere ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem görme engelliler için kritik. Dekoratif görseller için alt='' (boş) kullanın. Bu iyileştirme görsel arama sonuçlarında görünmenizi sağlar. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin."
         ],
-        negatives: [
-          "Meta description etiketi eksik veya boş - Google arama sonuçlarında açıklama görünmeyecek",
-          "H1 başlık etiketi eksik veya birden fazla - sayfa hiyerarşisi belirsiz",
-          "Alt etiketleri eksik - görseller arama motorları tarafından anlaşılamıyor"
+        issues: [
+          {
+            title: "XML Sitemap eksikliği",
+            why: "XML sitemap olmadan arama motorları sitenizin tüm sayfalarını keşfedemez ve indeksleyemez. Bu özellikle yeni içeriklerinizin hızlı indekslenmesini engeller.",
+            how: [
+              "Sitemap.xml dosyası oluşturun: <?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>" + (websiteUrl || "https://yourdomain.com") + "</loc></url></urlset>",
+              "Dosyayı sitenizin kök dizinine yükleyin (/sitemap.xml)",
+              "Google Search Console'da Sitemaps bölümünden gönderin",
+              "robots.txt dosyasına 'Sitemap: " + (websiteUrl || "https://yourdomain.com") + "/sitemap.xml' satırını ekleyin"
+            ]
+          },
+          {
+            title: "Open Graph meta etiketleri eksik",
+            why: "Sosyal medyada paylaşıldığında siteniz düzgün görünmez, bu da sosyal medya trafiğinizi olumsuz etkiler ve marka imajınızı zedeler.",
+            how: [
+              "<head> bölümüne şu etiketleri ekleyin:",
+              "<meta property='og:title' content='Sayfa Başlığı'>",
+              "<meta property='og:description' content='Sayfa Açıklaması'>", 
+              "<meta property='og:image' content='" + (websiteUrl || "https://yourdomain.com") + "/og-image.jpg'>",
+              "Test: Facebook Sharing Debugger'da (developers.facebook.com/tools/debug) URL'nizi kontrol edin"
+            ]
+          }
         ],
-        suggestions: [
-          "Meta description ekleyin: <head> bölümüne <meta name='description' content='Sitenizin 150-160 karakter açıklaması burada olacak'> ekleyin. Bu Google arama sonuçlarında görünen açıklamadır ve tıklama oranını doğrudan etkiler. Test: Google'da 'site:yourdomain.com' yazıp açıklamanın görünüp görünmediğini kontrol edin. Açıklama yoksa Google otomatik olarak sayfa içeriğinden alıntı yapar.",
-          
-          "H1 başlık etiketi ekleyin: Ana içerik alanına <h1>Sayfanızın Ana Başlığı</h1> ekleyin. Her sayfada sadece 1 tane H1 olmalı ve ana anahtar kelimenizi içermeli. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun. Test: Tarayıcıda F12 açıp Elements sekmesinde 'h1' arayın. Sadece 1 tane olmalı ve sayfa konusunu özetlemeli.",
-          
-          "Görsellere alt etiketleri ekleyin: Tüm <img> etiketlerinize alt='Görselin açıklaması' ekleyin. Örnek: <img src='logo.jpg' alt='ABC Şirketi logosu'> şeklinde. Bu hem SEO hem görme engelliler için kritik. Dekoratif görseller için alt='' (boş) kullanın. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin.",
-          
-          "XML Sitemap oluşturun: /sitemap.xml dosyası oluşturup tüm sayfalarınızı listeleyin. Örnek format: <?xml version='1.0'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>https://yourdomain.com/</loc></url></urlset>. Sonra Google Search Console'da Sitemaps bölümünden gönderin. Test: Tarayıcıda yourdomain.com/sitemap.xml adresini ziyaret edin.",
-          
-          "Open Graph etiketleri ekleyin: <head> bölümüne sosyal medya paylaşımları için <meta property='og:title' content='Sayfa başlığı'>, <meta property='og:description' content='Sayfa açıklaması'>, <meta property='og:image' content='https://yourdomain.com/resim.jpg'> ekleyin. Test: Facebook Sharing Debugger'da (developers.facebook.com/tools/debug) URL'nizi test edin."
-        ],
-        reportData: {
-          metaTags: false,
-          headings: false,
-          images: false,
-          performance: 65,
-          mobileOptimization: true,
-          sslCertificate: true,
-          pageSpeed: Math.floor(Math.random() * 40) + 40,
-          keywords: []
+        roadmap: {
+          d30: [
+            "Meta etiketleri (title, description) tüm sayfalarda optimize edin",
+            "H1-H6 başlık yapısını düzenleyin ve anahtar kelime optimizasyonu yapın",
+            "Tüm görsellere alt etiketleri ekleyin",
+            "XML sitemap oluşturup Google Search Console'a gönderin"
+          ],
+          d60: [
+            "İç bağlantı stratejisi kurun (topic clusters)",
+            "Open Graph ve Twitter Card meta etiketlerini ekleyin",
+            "Core Web Vitals optimizasyonu yapın (görsel sıkıştırma, lazy loading)",
+            "Schema markup (structured data) ekleyin"
+          ],
+          d90: [
+            "İçerik takvimi oluşturun ve düzenli blog yazıları yayınlayın",
+            "Backlink stratejisi geliştirin",
+            "Yerel SEO optimizasyonu yapın (Google My Business)",
+            "Rekabetçi analiz yapıp eksik anahtar kelimeleri hedefleyin"
+          ]
+        },
+        notes: [
+          "Bu öneriler mevcut SEO skorunuz (" + (currentScore || "bilinmiyor") + ") temel alınarak hazırlandı.",
+          "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün.",
+          "Google Search Console'u mutlaka kurun ve düzenli takip edin."
         }
       };
     }
@@ -183,9 +230,43 @@ Her öneri minimum 50 kelime olmalı ve kesinlikle uygulanabilir adımlar içerm
         
         "İç bağlantı stratejisi kurun: İlgili sayfalar arasında <a href='/ilgili-sayfa' title='Açıklayıcı başlık'>anlamlı anchor text</a> ile bağlantılar kurun. Ana sayfadan önemli sayfalara, kategori sayfalarından ürün sayfalarına bağlantı verin. Test: Site haritanızı çizin ve her sayfanın en fazla 3 tıkla erişilebilir olduğunu kontrol edin."
       ];
+      
+      // Add snippets for Advanced users
+      if (membershipType === "Advanced") {
+        parsed.snippets = [
+          {
+            title: "Kapsamlı Meta Etiketleri",
+            language: "html",
+            code: `<head>
+  <title>Ana Anahtar Kelime - Marka Adı</title>
+  <meta name="description" content="150-160 karakter açıklama burada">
+  <meta property="og:title" content="Sosyal medya başlığı">
+  <meta property="og:description" content="Sosyal medya açıklaması">
+  <meta property="og:image" content="${websiteUrl || 'https://yourdomain.com'}/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+</head>`,
+            note: "Bu kodu sitenizin <head> bölümüne ekleyin. Her sayfa için benzersiz title ve description yazın."
+          },
+          {
+            title: "Structured Data (JSON-LD)",
+            language: "json",
+            code: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Şirket Adınız",
+  "url": "${websiteUrl || 'https://yourdomain.com'}",
+  "logo": "${websiteUrl || 'https://yourdomain.com'}/logo.jpg",
+  "description": "Şirketinizin açıklaması"
+}
+</script>`,
+            note: "Bu kodu <head> bölümüne ekleyin. Google Rich Results Test aracında test edin."
+          }
+        ];
+      }
     }
 
-    console.log("[INFO] OpenAI request successful, returning suggestions");
+    console.log("[INFO] OpenAI suggestions request successful");
     return res.json({ ok: true, data: parsed });
   } catch (e) {
     console.error("[ERROR] Server error in /api/seo-suggestions:", e);
