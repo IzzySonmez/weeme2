@@ -594,7 +594,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         console.log('[DEBUG] API Base:', apiBase);
         console.log('[DEBUG] Scan URL:', scanUrl);
         
-        const resp = await fetch("/api/seo-scan", {
+        const resp = await fetch(scanUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: trackingCode.websiteUrl }),
