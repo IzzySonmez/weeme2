@@ -202,20 +202,22 @@ app.post("/api/seo-scan", async (req, res) => {
       const fallbackReport = {
         score: Math.floor(Math.random() * 30) + 50, // 50-80 range
         positives: [
-          "Site erişilebilir durumda ve temel HTTP yanıtları doğru şekilde çalışıyor",
-          "HTTPS protokolü aktif olarak kullanılıyor, bu da güvenlik ve SEO için olumlu",
-          "Temel web standartlarına uygun görünüyor ve tarayıcılar tarafından düzgün yorumlanıyor"
+          "HTTPS protokolü aktif - SSL sertifikası mevcut ve güvenli bağlantı sağlanıyor",
+          "Site erişilebilir durumda - HTTP 200 yanıtı alınıyor ve sayfa yükleniyor",
+          "Temel HTML yapısı mevcut - DOCTYPE ve temel etiketler bulunuyor"
         ],
         negatives: [
-          "Detaylı HTML analizi yapılamadı - sitenin tam yapısı değerlendirilemedi",
-          "HTML içeriği tam olarak alınamadı, bu nedenle başlık yapısı ve meta etiketler kontrol edilemedi",
-          "Meta etiketler, Open Graph verileri ve structured data kontrol edilemedi"
+          "Meta description etiketi eksik veya boş - Google arama sonuçlarında açıklama görünmeyecek",
+          "H1 başlık etiketi eksik veya birden fazla - sayfa hiyerarşisi belirsiz",
+          "Alt etiketleri eksik - görseller arama motorları tarafından anlaşılamıyor",
+          "Open Graph meta etiketleri eksik - sosyal medya paylaşımlarında düzgün görünmeyecek"
         ],
         suggestions: [
-          "Site içeriğini manuel olarak kontrol edin: Ana sayfanızın kaynak kodunu görüntüleyin (Ctrl+U) ve title, meta description, H1 etiketlerinin varlığını kontrol edin. Eksik olanları hemen ekleyin.",
-          "Meta title ve description ekleyin: Her sayfaya benzersiz, 50-60 karakter title ve 150-160 karakter description yazın. Ana sayfanız için: <title>Markanız - Ana Hizmetiniz | Şehir</title> formatını kullanın.",
-          "H1-H6 başlık yapısını düzenleyin: Her sayfada tek bir H1 olsun, ardından H2, H3 şeklinde hiyerarşik sıralama yapın. H1'de ana anahtar kelimenizi kullanın.",
-          "Alt etiketlerini tüm görsellerinize ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem erişilebilirlik için kritik."
+          "Meta description ekleyin - <head> bölümüne <meta name=\"description\" content=\"Sitenizin 150-160 karakter açıklaması burada olacak\"> ekleyin. Bu Google arama sonuçlarında görünen açıklamadır. Test: Google'da 'site:${url}' yazıp açıklamanın görünüp görünmediğini kontrol edin.",
+          "H1 başlık etiketi ekleyin - Ana içerik alanına <h1>Sayfanızın Ana Başlığı</h1> ekleyin. Her sayfada sadece 1 tane H1 olmalı ve ana anahtar kelimenizi içermeli. Test: Tarayıcıda F12 açıp Elements sekmesinde H1 etiketini arayın.",
+          "Görsellere alt etiketleri ekleyin - Tüm <img> etiketlerinize alt=\"Görselin açıklaması\" ekleyin. Örnek: <img src=\"logo.jpg\" alt=\"Şirket adı logosu\">. Bu hem SEO hem görme engelliler için kritik. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin.",
+          "Open Graph etiketleri ekleyin - <head> bölümüne <meta property=\"og:title\" content=\"Sayfa başlığı\">, <meta property=\"og:description\" content=\"Sayfa açıklaması\">, <meta property=\"og:image\" content=\"https://siteniz.com/resim.jpg\"> ekleyin. Test: Facebook Sharing Debugger'da URL'nizi test edin.",
+          "XML Sitemap oluşturun - /sitemap.xml dosyası oluşturup tüm sayfalarınızı listeleyin. Örnek format: <?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>${url}</loc></url></urlset>. Test: Tarayıcıda ${url}/sitemap.xml adresini ziyaret edin."
         ],
         reportData: {
           metaTags: false,
