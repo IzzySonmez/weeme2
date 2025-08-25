@@ -29,6 +29,8 @@ interface SuggestionsProps {
   onOpenBilling?: () => void;
 }
 
+const OPENAI_KEY_STORAGE = 'openai_api_key';
+
 const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const { user } = useAuth();
 
@@ -38,6 +40,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const [result, setResult] = useState<AIStruct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; at: string; prompt: string; res: AIStruct }>>([]);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [tempKey, setTempKey] = useState('');
 
   // Load latest report
   const latestReport: SEOReport | null = useMemo(() => {
@@ -335,12 +339,12 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
           <div className="flex items-center gap-3">
             <Rocket className="h-5 w-5 text-purple-600" />
             <div>
-              <div className="font-medium text-gray-900">Advanced'a yükselt ve kod snippet'leri al</div>
-              <div className="text-sm text-gray-600">Hazır HTML/CSS/JS kodları ile hızlıca uygula</div>
+              <div className="font-medium text-gray-900">Advanced'a yükselt</div>
+              <div className="text-sm text-gray-600">Kod snippet'leri ve gelişmiş öneriler için</div>
             </div>
             <button
               onClick={() => onOpenBilling?.()}
-              className="ml-auto px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+              className="ml-auto px-3 py-1.5 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700"
             >
               Yükselt
             </button>
@@ -539,6 +543,44 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         </div>
       )}
 
+      {/* Key Modal */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-4">
+            <div className="text-lg font-semibold">OpenAI API Anahtarı</div>
+            <p className="text-sm text-gray-600">
+              Bu anahtar sadece tarayıcınızda saklanır (<code>localStorage</code>).
+              Üretimde server-side proxy önerilir.
+            </p>
+            <input
+              type="password"
+              value={tempKey}
+              onChange={(e) => setTempKey(e.target.value)}
+              placeholder="sk-... (OpenAI)"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="px-3 py-1.5 rounded-md border hover:bg-gray-50"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={() => {
+                  const v = (tempKey || '').trim();
+                  if (!v) return;
+                  localStorage.setItem(OPENAI_KEY_STORAGE, v);
+                  setShowKeyModal(false);
+                }}
+                className="px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
