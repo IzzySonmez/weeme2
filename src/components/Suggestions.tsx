@@ -15,20 +15,6 @@ import {
   Lock,
 } from 'lucide-react';
 
-// --- OpenAI key helpers ---
-const OPENAI_KEY_STORAGE = 'weeme_openai_key';
-
-function getOpenAIKey(): string | undefined {
-  // Priority: Vite env -> localStorage -> window var (fallback)
-  const viteKey = (import.meta as any).env?.VITE_OPENAI_API_KEY as string | undefined;
-  if (viteKey && viteKey.trim()) return viteKey.trim();
-  const ls = localStorage.getItem(OPENAI_KEY_STORAGE) || '';
-  if (ls.trim()) return ls.trim();
-  const win = (window as any).OPENAI_API_KEY as string | undefined;
-  if (win && win.trim()) return win.trim();
-  return undefined;
-}
-
 type AIStruct = {
   quickWins?: string[];
   issues?: Array<{ title: string; why?: string; how?: string[] }>;
@@ -52,8 +38,6 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const [result, setResult] = useState<AIStruct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; at: string; prompt: string; res: AIStruct }>>([]);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [tempKey, setTempKey] = useState('');
 
   // Load latest report
   const latestReport: SEOReport | null = useMemo(() => {
@@ -230,9 +214,55 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   };
 
   const callOpenAI = async (): Promise<AIStruct> => {
-    const apiKey = getOpenAIKey();
-    if (!apiKey) return offlineGenerate();
+    // Build request for our backend proxy
+    const base = (import.meta as any).env?.VITE_API_BASE || "";
+    const url = `${base || ""}/api/seo-suggestions`.replace(/\/+$/, "").replace(/^(.*)$/, "$1"); // normalize
 
+    const body = {
+      prompt: buildUserPrompt(),
+      reportContext: includeReport ? reportSummary : "",
+      membershipType: user?.membershipType || "Free",
+    };
+
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        // If backend blocks Free or any error occurs, use offline fallback
+        return offlineGenerate();
+      }
+
+      const json = await resp.json();
+      const data = json?.data;
+
+      if (!data) return offlineGenerate();
+
+      // If backend passed text instead of JSON, map into AIStruct
+      if (typeof data === "string" || data.text) {
+        return {
+          quickWins: [typeof data === "string" ? data : data.text],
+          issues: [],
+          roadmap: { d30: [], d60: [], d90: [] },
+          notes: ["OpenAI yanıtı metin olarak döndü; JSON'a dönüştürülemedi."],
+        };
+      }
+
+      // Ensure Advanced users get snippets; for Pro, we can strip them if needed
+      if (user?.membershipType !== "Advanced" && Array.isArray(data.snippets)) {
+        delete data.snippets;
+      }
+
+      return data as AIStruct;
+    } catch {
+      return offlineGenerate();
+    }
+  };
+
+  const callOpenAIOld = async (): Promise<AIStruct> => {
     const body = {
       model: 'gpt-4o-mini',
       messages: [
@@ -244,7 +274,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer DUMMY` },
       body: JSON.stringify(body),
     });
 
@@ -301,22 +331,6 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
     <div className="space-y-8">
       {/* Pro upsell banner */}
       {!isAdvanced && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start justify-between">
-          <div className="flex items-start gap-2">
-            <Info className="h-5 w-5 text-indigo-600" />
-            <p className="text-sm text-indigo-900">
-              <b>Advanced</b> pakete geçerek öneriler için <b>otomatik kod/snippet</b> alabilir ve daha hızlı uygulayabilirsiniz.
-            </p>
-          </div>
-          <button
-            onClick={() => onOpenBilling?.()}
-            className="inline-flex items-center gap-2 text-indigo-700 hover:text-indigo-900"
-          >
-            Plan / Ödeme <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
       <div className="bg-white rounded-lg border p-6">
         <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Sparkles className="h-6 w-6 text-purple-600" />
@@ -508,44 +522,6 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         </div>
       )}
 
-      {/* Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-4">
-            <div className="text-lg font-semibold">OpenAI API Anahtarı</div>
-            <p className="text-sm text-gray-600">
-              Bu anahtar sadece tarayıcınızda saklanır (<code>localStorage</code>).
-              Üretimde server-side proxy önerilir.
-            </p>
-            <input
-              type="password"
-              value={tempKey}
-              onChange={(e) => setTempKey(e.target.value)}
-              placeholder="sk-... (OpenAI)"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="px-3 py-1.5 rounded-md border hover:bg-gray-50"
-              >
-                Vazgeç
-              </button>
-              <button
-                onClick={() => {
-                  const v = (tempKey || '').trim();
-                  if (!v) return;
-                  localStorage.setItem(OPENAI_KEY_STORAGE, v);
-                  setShowKeyModal(false);
-                }}
-                className="px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700"
-              >
-                Kaydet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
