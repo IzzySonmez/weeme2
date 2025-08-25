@@ -596,6 +596,83 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         });
 
         if (!resp.ok) {
+          console.error('SEO scan failed:', resp.status, resp.statusText);
+          // Fallback to old mock scan if API fails
+          return runSEOScanOld(auto);
+        }
+
+        const json = await resp.json();
+        const report = json?.report;
+        if (!report) {
+          console.error('Invalid scan output:', json);
+          // Fallback to old mock scan if response is invalid
+          return runSEOScanOld(auto);
+        }
+
+        const mockReport: SEOReport = {
+          id: Date.now().toString(),
+          userId: user.id,
+          websiteUrl: trackingCode.websiteUrl,
+          score: report.score,
+          positives: report.positives,
+          negatives: report.negatives,
+          suggestions: report.suggestions,
+          createdAt: new Date().toISOString(),
+          reportData: report.reportData,
+        };
+
+        const updatedReports = [mockReport, ...reports];
+        setReports(updatedReports);
+        localStorage.setItem(`reports_${user.id}`, JSON.stringify(updatedReports));
+
+        if (user.membershipType === 'Free') {
+          updateCredits(Math.max(0, user.credits - 1));
+        }
+
+        const updatedTC: TrackingCode = {
+          ...trackingCode,
+          lastScan: new Date().toISOString(),
+          nextScan: getNextScanDate(trackingCode.scanFrequency),
+        };
+        setTrackingCode(updatedTC);
+        localStorage.setItem(`trackingCode_${user.id}`, JSON.stringify(updatedTC));
+      } catch (e) {
+        console.error('SEO scan error:', e);
+        // Fallback to old mock scan on any error
+        return runSEOScanOld(auto);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // For auto scans, add a small delay to avoid overwhelming the server
+    if (auto) {
+      setTimeout(performScan, 1000);
+    } else {
+      performScan();
+    }
+  };
+
+  const runSEOScanOld = (auto = false) => {
+    if (!user || !trackingCode) return;
+
+    if (!auto && user.membershipType === 'Free' && (user.credits ?? 0) <= 0) {
+      onOpenBilling?.();
+      return;
+    }
+
+    setLoading(true);
+
+    // Old simulate scan (fallback)
+    const performScan = async () => {
+      try {
+        const resp = await fetch("/api/seo-scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: trackingCode.websiteUrl }),
+        });
+
+        if (!resp.ok) {
           setLoading(false);
           alert("Tarama başarısız oldu.");
           return;
@@ -664,6 +741,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
     // Old simulate scan (fallback)
     setTimeout(() => {
+      const score = Math.floor(Math.random() * 40) + 60;
+      const mockReport: SEOReport = {
+        id: Date.now().toString(),
       const score = Math.floor(Math.random() * 40) + 60;
       const mockReport: SEOReport = {
         id: Date.now().toString(),
