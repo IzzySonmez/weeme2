@@ -1,9 +1,13 @@
 // Minimal secure proxy for OpenAI chat completions
 // Keep API key on the server. Do NOT expose it to the client.
 
+import dotenv from 'dotenv';
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' });
 
 const app = express();
 app.use(cors());
