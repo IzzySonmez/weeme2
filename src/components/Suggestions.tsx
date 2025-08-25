@@ -35,13 +35,11 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const { user } = useAuth();
 
   const [prompt, setPrompt] = useState('');
-  const [includeReport, setIncludeReport] = useState(true);
+  const [useReportBase, setUseReportBase] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIStruct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; at: string; prompt: string; res: AIStruct }>>([]);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [tempKey, setTempKey] = useState('');
 
   // Load latest report
   const latestReport: SEOReport | null = useMemo(() => {
@@ -119,12 +117,21 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   };
 
   const buildUserPrompt = () => {
-    const base = prompt?.trim() || 'SEO iyileştirme planı üret.';
-    const ctx = includeReport && reportSummary ? `\n\n[RAPOR BAĞLAMI]\n${reportSummary}` : '';
-    const checksText = checks.map(c => `- ${c.title}: ${c.status}${c.note ? ` (${c.note})` : ''}`).join('\n');
-    const checkBlock = `\n\n[KONTROLLER]\n${checksText}`;
-    const req = `\n\n[İSTEK]\n- Önce en hızlı kazanımlar (quick wins)\n- Sorunlar için: neden (why) + adım adım çözüm (how)\n- 30/60/90 gün yol haritası\n- ${user?.membershipType === 'Advanced' ? 'Uygulanabilir KOD SNIPPET\'LERİ de ver.' : 'Kod snippet gerekmez.'}\n- JSON formatında dön (quickWins[], issues[], ${user?.membershipType === 'Advanced' ? 'snippets[],' : ''} roadmap{d30[],d60[],d90[]}, notes[]).`;
-    return `${base}${ctx}${checkBlock}${req}`;
+    if (useReportBase && latestReport) {
+      // Rapor bazlı öneriler - Dashboard raporunu temel al
+      const customPrompt = prompt?.trim() ? `\n\n[ÖZEL İSTEK]\n${prompt.trim()}` : '';
+      const ctx = `[MEVCUT RAPOR ANALİZİ]\nSite: ${latestReport.websiteUrl}\nSEO Skoru: ${latestReport.score}/100\n\nOlumlu Yönler:\n${latestReport.positives.map(p => `• ${p}`).join('\n')}\n\nEksikler:\n${latestReport.negatives.map(n => `• ${n}`).join('\n')}\n\nMevcut Öneriler:\n${latestReport.suggestions.map(s => `• ${s}`).join('\n')}`;
+      const checksText = checks.map(c => `- ${c.title}: ${c.status}${c.note ? ` (${c.note})` : ''}`).join('\n');
+      const checkBlock = `\n\n[EK KONTROLLER]\n${checksText}`;
+      const req = `\n\n[GÖREV]\nYukarıdaki rapor analizini temel alarak:\n- Bu rapordaki eksikleri nasıl düzelteceğini DETAYLI anlat\n- Her öneri için KOD ÖRNEĞİ ver\n- NEREDE yapılacağını belirt\n- NASIL test edileceğini açıkla\n- Hızlı kazanımları öncelikle\n- 30/60/90 gün yol haritası çıkar\n${user?.membershipType === 'Advanced' ? '- Uygulanabilir KOD SNIPPET\'LERİ ekle' : ''}\n\nJSON formatında dön: {quickWins[], issues[{title,why,how[]}], ${user?.membershipType === 'Advanced' ? 'snippets[{title,language,code,note}],' : ''} roadmap{d30[],d60[],d90[]}, notes[]}`;
+      return `${ctx}${checkBlock}${customPrompt}${req}`;
+    } else {
+      // Serbest prompt - rapor kullanma
+      const base = prompt?.trim() || 'Genel SEO iyileştirme önerileri ver.';
+      const siteInfo = latestReport ? `\n\n[SİTE BİLGİSİ]\nURL: ${latestReport.websiteUrl}` : '';
+      const req = `\n\n[GÖREV]\n- Detaylı, uygulanabilir öneriler ver\n- Her öneri için KOD ÖRNEĞİ ekle\n- NEREDE yapılacağını belirt\n- NASIL test edileceğini açıkla\n- Hızlı kazanımları öncelikle\n${user?.membershipType === 'Advanced' ? '- Kod snippet\'leri ekle' : ''}\n\nJSON formatında dön: {quickWins[], issues[{title,why,how[]}], ${user?.membershipType === 'Advanced' ? 'snippets[{title,language,code,note}],' : ''} roadmap{d30[],d60[],d90[]}, notes[]}`;
+      return `${base}${siteInfo}${req}`;
+    }
   };
 
   const offlineGenerate = (): AIStruct => {
@@ -224,10 +231,11 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
       
       const body = {
         prompt: buildUserPrompt(),
-        reportContext: includeReport ? reportSummary : "",
+        reportContext: useReportBase ? reportSummary : "",
         membershipType: user?.membershipType || "Free",
         websiteUrl: latestReport?.websiteUrl || "",
         currentScore: latestReport?.score || 0,
+        useReportBase,
       };
 
       console.log('[DEBUG] Sending suggestions request:', body);
@@ -293,6 +301,13 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   const onGenerate = async () => {
     if (!user) return;
+    
+    // Rapor bazlı öneriler istiyorsa ama rapor yoksa uyar
+    if (useReportBase && !latestReport) {
+      alert('Rapor bazlı öneriler için önce Dashboard\'dan bir site taraması yapın.');
+      return;
+    }
+    
     setLoading(true);
     setResult(null);
     try {
@@ -376,58 +391,97 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         </div>
 
         {/* Report context */}
-        <div className="bg-gray-50 border rounded p-3 text-sm text-gray-700 mb-4">
-          <span className="font-medium">Rapor bağlamı:</span>{' '}
-          {reportSummary || 'Son rapor bulunamadı.'}
-        </div>
+        {useReportBase && latestReport && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FileCode2 className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-blue-900">Mevcut Rapor Temel Alınacak</span>
+            </div>
+            <div className="text-sm text-blue-800">
+              <div><strong>Site:</strong> {latestReport.websiteUrl}</div>
+              <div><strong>Skor:</strong> {latestReport.score}/100</div>
+              <div><strong>Ana Eksikler:</strong> {latestReport.negatives.slice(0, 3).join(', ')}</div>
+            </div>
+          </div>
+        )}
+
+        {!useReportBase && (
+          <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Lightbulb className="h-4 w-4 text-amber-600" />
+              <span className="font-medium text-amber-900">Serbest Prompt Modu</span>
+            </div>
+            <div className="text-sm text-amber-800">
+              Rapor kullanılmayacak. Sadece girdiğiniz prompt'a göre genel öneriler alacaksınız.
+            </div>
+          </div>
+        )}
 
         {/* Checks grid (compact) */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
-          {checks.map(c => (
-            <div key={c.id} className="flex items-center gap-2 text-sm">
-              {c.status === 'pass' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              ) : c.status === 'fail' ? (
-                <AlertTriangle className="h-4 w-4 text-rose-600" />
-              ) : (
-                <Lightbulb className="h-4 w-4 text-amber-600" />
-              )}
-              <span className="text-gray-800">{c.title}</span>
-              <span className="text-gray-500">• {c.status}</span>
-            </div>
-          ))}
-        </div>
+        {useReportBase && latestReport && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+            {checks.map(c => (
+              <div key={c.id} className="flex items-center gap-2 text-sm">
+                {c.status === 'pass' ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                ) : c.status === 'fail' ? (
+                  <AlertTriangle className="h-4 w-4 text-rose-600" />
+                ) : (
+                  <Lightbulb className="h-4 w-4 text-amber-600" />
+                )}
+                <span className="text-gray-800">{c.title}</span>
+                <span className="text-gray-500">• {c.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Prompt */}
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          SEO sorunuz veya ihtiyacınız nedir?
+          {useReportBase ? 'Rapor üzerine ek soru/istek (opsiyonel):' : 'SEO sorunuz veya ihtiyacınız nedir?'}
         </label>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
-          placeholder="Örnek: Ana sayfamda H1 etiketi yok. Hızlı bir düzeltme planı ve kontrol listesi hazırlar mısın?"
+          placeholder={useReportBase 
+            ? "Örnek: Bu eksikleri nasıl öncelik sırasına koymalıyım? Hangi araçları kullanabilirim?"
+            : "Örnek: E-ticaret sitesi için genel SEO stratejisi öner. Hangi araçları kullanmalıyım?"
+          }
           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
         />
 
         <div className="flex items-center justify-between mb-4">
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              className="rounded border-gray-300"
-              checked={includeReport}
-              onChange={(e) => setIncludeReport(e.target.checked)}
-            />
-            Raporu Dahil Et
-          </label>
+          <div className="flex items-center gap-4">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="promptMode"
+                className="border-gray-300"
+                checked={useReportBase}
+                onChange={() => setUseReportBase(true)}
+              />
+              Rapor Bazlı Öneriler
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="promptMode"
+                className="border-gray-300"
+                checked={!useReportBase}
+                onChange={() => setUseReportBase(false)}
+              />
+              Serbest Prompt
+            </label>
+          </div>
 
           <button
             onClick={onGenerate}
-            disabled={loading}
+            disabled={loading || (useReportBase && !latestReport)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-60"
           >
             {loading ? <Loader className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Önerileri Al
+            {useReportBase ? 'Rapor Bazlı Öneriler Al' : 'Serbest Öneriler Al'}
           </button>
         </div>
 
@@ -526,56 +580,16 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         )}
       </div>
 
-      {/* History */}
+      {/* History - Compact */}
       {history.length > 0 && (
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold text-gray-900 mb-3">Geçmiş</h3>
+        <div className="bg-white rounded-lg border p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Son Öneriler</h3>
           <div className="space-y-2">
-            {history.map(h => (
-              <div key={h.id} className="border rounded p-3">
-                <div className="text-xs text-gray-500">{new Date(h.at).toLocaleString('tr-TR')}</div>
-                <div className="text-sm text-gray-800 mt-1 line-clamp-2">Prompt: {h.prompt}</div>
+            {history.slice(0, 3).map(h => (
+              <div key={h.id} className="text-xs text-gray-600 p-2 bg-gray-50 rounded">
+                {new Date(h.at).toLocaleString('tr-TR')} - {h.prompt || 'Rapor bazlı'}
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-4">
-            <div className="text-lg font-semibold">OpenAI API Anahtarı</div>
-            <p className="text-sm text-gray-600">
-              Bu anahtar sadece tarayıcınızda saklanır (<code>localStorage</code>).
-              Üretimde server-side proxy önerilir.
-            </p>
-            <input
-              type="password"
-              value={tempKey}
-              onChange={(e) => setTempKey(e.target.value)}
-              placeholder="sk-... (OpenAI)"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="px-3 py-1.5 rounded-md border hover:bg-gray-50"
-              >
-                Vazgeç
-              </button>
-              <button
-                onClick={() => {
-                  const v = (tempKey || '').trim();
-                  if (!v) return;
-                  localStorage.setItem(OPENAI_KEY_STORAGE, v);
-                  setShowKeyModal(false);
-                }}
-                className="px-3 py-1.5 rounded-md bg-purple-600 text-white hover:bg-purple-700"
-              >
-                Kaydet
-              </button>
-            </div>
           </div>
         </div>
       )}

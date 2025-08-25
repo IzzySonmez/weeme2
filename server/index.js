@@ -40,7 +40,7 @@ app.post("/api/seo-suggestions", async (req, res) => {
       });
     }
 
-    const { prompt, reportContext, membershipType, websiteUrl, currentScore } = req.body || {};
+    const { prompt, reportContext, membershipType, websiteUrl, currentScore, useReportBase } = req.body || {};
 
     // Basic membership guard on server
     if (membershipType !== "Pro" && membershipType !== "Advanced") {
@@ -48,32 +48,77 @@ app.post("/api/seo-suggestions", async (req, res) => {
       return res.status(403).json({ error: "Not allowed for this plan" });
     }
 
-    console.log("[INFO] Making OpenAI suggestions request for:", membershipType, "Score:", currentScore);
+    console.log("[INFO] Making OpenAI suggestions request for:", membershipType, "Score:", currentScore, "Report-based:", useReportBase);
 
-    // Ultra specific system prompt for SEO suggestions
-    const systemPrompt = `Sen dünya çapında tanınmış bir SEO uzmanısın. Müşterilere SADECE uygulanabilir, somut öneriler veriyorsun.
+    // Different system prompts based on mode
+    const systemPrompt = useReportBase 
+      ? `Sen dünya çapında tanınmış bir SEO uzmanısın. Müşterinin mevcut SEO raporunu analiz edip SADECE uygulanabilir, somut öneriler veriyorsun.
 
 KRITIK KURALLAR:
 1. SADECE JSON formatında yanıt ver, hiç açıklama yapma
-2. Her öneri minimum 100 kelime olsun ve şunları içersin:
+2. Mevcut rapordaki eksikleri temel al ve her öneri minimum 80 kelime olsun:
    - SPESIFIK HTML/CSS kod örneği
    - HANGİ dosyaya/bölüme ekleneceği
    - NEDEN önemli olduğu (SEO etkisi)
    - NASIL test edileceği (adım adım)
    - BEKLENEN sonuç (skor artışı vs)
-3. Önerileri öncelik sırasına göre sırala (en etkili önce)
+3. Rapordaki eksikleri öncelik sırasına göre sırala (en etkili önce)
+4. Mevcut pozitif yönleri de dikkate al, gereksiz tekrar yapma
+
+JSON FORMAT:
+{
+  "quickWins": [
+    "RAPOR EKSİĞİ 1: Detaylı çözüm, kod örneği, test yöntemi ile",
+    "RAPOR EKSİĞİ 2: Minimum 80 kelime, spesifik adımlar ile"
+  ],
+  "issues": [
+    {
+      "title": "Rapordaki spesifik eksik başlığı",
+      "why": "Bu eksiklik neden mevcut skoru düşürüyor",
+      "how": [
+        "Adım 1: Spesifik kod örneği ile",
+        "Adım 2: Hangi dosyada yapılacağı ile",
+        "Adım 3: Nasıl test edileceği ile"
+      ]
+    }
+  ],
+  ${membershipType === "Advanced" ? `"snippets": [
+    {
+      "title": "Rapor eksikliği için kod snippet",
+      "language": "html/css/js",
+      "code": "Tam kod örneği",
+      "note": "Nasıl kullanılacağı ve nereye ekleneceği"
+    }
+  ],` : ''}
+  "roadmap": {
+    "d30": ["Rapordaki kritik eksikleri giderme"],
+    "d60": ["Orta vadeli SEO iyileştirmeleri"], 
+    "d90": ["Uzun vadeli strateji ve takip"]
+  },
+  "notes": ["Mevcut rapor skoruna göre önemli notlar"]
+}`
+      : `Sen dünya çapında tanınmış bir SEO uzmanısın. Müşterinin serbest sorusuna SADECE uygulanabilir, somut öneriler veriyorsun.
+
+KRITIK KURALLAR:
+1. SADECE JSON formatında yanıt ver, hiç açıklama yapma
+2. Her öneri minimum 80 kelime olsun ve şunları içersin:
+   - SPESIFIK HTML/CSS kod örneği
+   - HANGİ dosyaya/bölüme ekleneceği
+   - NEDEN önemli olduğu (SEO etkisi)
+   - NASIL test edileceği (adım adım)
+3. Genel SEO best practice'leri temel al
 4. Gerçekçi, uygulanabilir öneriler ver
 
 JSON FORMAT:
 {
   "quickWins": [
-    "HIZLI KAZANIM 1: Detaylı açıklama, kod örneği, test yöntemi ve beklenen sonuç ile",
-    "HIZLI KAZANIM 2: Minimum 100 kelime, spesifik adımlar ile"
+    "HIZLI KAZANIM 1: Detaylı açıklama, kod örneği, test yöntemi ile",
+    "HIZLI KAZANIM 2: Minimum 80 kelime, spesifik adımlar ile"
   ],
   "issues": [
     {
-      "title": "Spesifik sorun başlığı",
-      "why": "Bu sorun neden SEO'yu etkiliyor, hangi sıralama faktörünü olumsuz etkiliyor",
+      "title": "Genel SEO sorunu başlığı",
+      "why": "Bu sorun neden SEO'yu etkiliyor",
       "how": [
         "Adım 1: Spesifik kod örneği ile",
         "Adım 2: Hangi dosyada yapılacağı ile",
@@ -97,14 +142,13 @@ JSON FORMAT:
   "notes": ["Önemli notlar ve uyarılar"]
 }`;
 
-    // Build context-aware prompt
+    // Build different prompts based on mode
     let contextPrompt = "";
-    if (reportContext) {
-      contextPrompt += `[MEVCUT DURUM]\nSite: ${websiteUrl}\nMevcut SEO Skoru: ${currentScore}/100\nRapor Özeti: ${reportContext}\n\n`;
+    if (useReportBase && reportContext) {
+      contextPrompt = `[MEVCUT SEO RAPORU]\nSite: ${websiteUrl}\nMevcut SEO Skoru: ${currentScore}/100\nRapor Detayları: ${reportContext}\n\n[GÖREV]\nYukarıdaki rapordaki eksiklikleri analiz et ve her birini nasıl düzelteceğini detaylı anlat. ${prompt ? `\n\nEK İSTEK: ${prompt}` : ''}`;
+    } else {
+      contextPrompt = `[SERBEST SEO DANIŞMANLIĞI]\n${websiteUrl ? `Site: ${websiteUrl}\n` : ''}[KULLANICI SORUSU]\n${prompt || "Genel SEO iyileştirme önerileri ver."}\n\n[GÖREV]\nYukarıdaki soruya detaylı, uygulanabilir öneriler ver. Her öneri kod örneği, test yöntemi ve beklenen sonuç içersin.`;
     }
-    
-    contextPrompt += `[KULLANICI TALEBİ]\n${prompt || "Bu sitenin SEO performansını artırmak için detaylı, uygulanabilir öneriler ver."}\n\n`;
-    contextPrompt += `[HEDEF]\nSEO skorunu artıracak, somut adımlar içeren öneriler ver. Her öneri kod örneği, test yöntemi ve beklenen sonuç içersin.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -164,16 +208,24 @@ JSON FORMAT:
       // Return highly detailed fallback suggestions
       parsed = {
         quickWins: [
-          "Meta description optimize edin: Mevcut meta description'ınızı 150-160 karakter arasında, anahtar kelime içeren ve tıklamaya teşvik eden bir açıklama ile değiştirin. <head> bölümünde <meta name='description' content='Yeni açıklamanız burada'> şeklinde güncelleyin. Bu değişiklik Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir. Test: Google'da 'site:" + (websiteUrl || "yourdomain.com") + "' arayarak yeni açıklamanın görünüp görünmediğini kontrol edin.",
+          useReportBase 
+            ? `Rapordaki meta description eksikliğini giderin: <head> bölümüne <meta name='description' content='${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'siteniz'} için 150-160 karakter açıklama'> ekleyin. Bu Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir. Test: Google'da 'site:${websiteUrl || 'yourdomain.com'}' arayarak kontrol edin.`
+            : "Meta description optimize edin: Mevcut meta description'ınızı 150-160 karakter arasında, anahtar kelime içeren ve tıklamaya teşvik eden bir açıklama ile değiştirin. <head> bölümünde <meta name='description' content='Yeni açıklamanız burada'> şeklinde güncelleyin. Bu değişiklik Google arama sonuçlarında tıklama oranınızı %15-25 artırabilir.",
           
-          "H1 başlık yapısını düzenleyin: Her sayfada tek bir H1 etiketi olduğundan emin olun ve ana anahtar kelimenizi içersin. Örnek: <h1>Ana Anahtar Kelime - Sayfa Konusu</h1>. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun. Bu değişiklik sayfa konunuzun arama motorları tarafından daha iyi anlaşılmasını sağlar. Test: Tarayıcıda F12 açıp Elements sekmesinde 'h1' arayın, sadece 1 tane olmalı.",
+          useReportBase
+            ? `Rapordaki H1 eksikliğini giderin: Ana içerik alanına <h1>${websiteUrl ? websiteUrl.replace('https://', '').split('/')[0] : 'Ana Sayfa'} - Açıklayıcı Başlık</h1> ekleyin. Her sayfada sadece 1 H1 olmalı. Test: F12 > Elements'te 'h1' arayın, tek olduğunu kontrol edin.`
+            : "H1 başlık yapısını düzenleyin: Her sayfada tek bir H1 etiketi olduğundan emin olun ve ana anahtar kelimenizi içersin. Örnek: <h1>Ana Anahtar Kelime - Sayfa Konusu</h1>. H1'den sonra H2, H3 şeklinde hiyerarşik yapı kurun.",
           
-          "Alt etiketlerini tüm görsellere ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem görme engelliler için kritik. Dekoratif görseller için alt='' (boş) kullanın. Bu iyileştirme görsel arama sonuçlarında görünmenizi sağlar. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin."
+          useReportBase
+            ? "Rapordaki alt etiket eksikliğini giderin: Tüm <img> etiketlerinize alt='Görselin açıklaması' ekleyin. Örnek: <img src='logo.jpg' alt='Şirket logosu'>. Test: Görseli sağ tıklayıp 'Öğeyi İncele' diyerek alt etiketini kontrol edin."
+            : "Alt etiketlerini tüm görsellere ekleyin: <img src='resim.jpg' alt='Açıklayıcı metin'> formatında, görseli tanımlayan 5-10 kelimelik açıklamalar yazın. Bu hem SEO hem görme engelliler için kritik."
         ],
         issues: [
           {
-            title: "XML Sitemap eksikliği",
-            why: "XML sitemap olmadan arama motorları sitenizin tüm sayfalarını keşfedemez ve indeksleyemez. Bu özellikle yeni içeriklerinizin hızlı indekslenmesini engeller.",
+            title: useReportBase ? "Rapordaki sitemap eksikliği" : "XML Sitemap eksikliği",
+            why: useReportBase 
+              ? `Mevcut raporda sitemap eksikliği tespit edildi. Bu durum skorunuzu ${currentScore || 'mevcut seviyede'} tutarak artışını engelliyor.`
+              : "XML sitemap olmadan arama motorları sitenizin tüm sayfalarını keşfedemez ve indeksleyemez.",
             how: [
               "Sitemap.xml dosyası oluşturun: <?xml version='1.0' encoding='UTF-8'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'><url><loc>" + (websiteUrl || "https://yourdomain.com") + "</loc></url></urlset>",
               "Dosyayı sitenizin kök dizinine yükleyin (/sitemap.xml)",
@@ -182,8 +234,10 @@ JSON FORMAT:
             ]
           },
           {
-            title: "Open Graph meta etiketleri eksik",
-            why: "Sosyal medyada paylaşıldığında siteniz düzgün görünmez, bu da sosyal medya trafiğinizi olumsuz etkiler ve marka imajınızı zedeler.",
+            title: useReportBase ? "Rapordaki sosyal medya meta eksikliği" : "Open Graph meta etiketleri eksik",
+            why: useReportBase
+              ? "Raporda sosyal medya meta etiketleri eksik olarak belirtildi. Bu sosyal medya trafiğinizi olumsuz etkiliyor."
+              : "Sosyal medyada paylaşıldığında siteniz düzgün görünmez, bu da sosyal medya trafiğinizi olumsuz etkiler.",
             how: [
               "<head> bölümüne şu etiketleri ekleyin:",
               "<meta property='og:title' content='Sayfa Başlığı'>",
@@ -195,27 +249,40 @@ JSON FORMAT:
         ],
         roadmap: {
           d30: [
-            "Meta etiketleri (title, description) tüm sayfalarda optimize edin",
-            "H1-H6 başlık yapısını düzenleyin ve anahtar kelime optimizasyonu yapın",
-            "Tüm görsellere alt etiketleri ekleyin",
-            "XML sitemap oluşturup Google Search Console'a gönderin"
+            useReportBase 
+              ? `Rapordaki kritik eksikleri giderin (skor: ${currentScore || 'mevcut'} → hedef: ${Math.min(100, (currentScore || 60) + 15)})`
+              : "Meta etiketleri (title, description) tüm sayfalarda optimize edin",
+            useReportBase
+              ? "H1 ve alt etiket eksikliklerini tamamlayın"
+              : "H1-H6 başlık yapısını düzenleyin ve anahtar kelime optimizasyonu yapın",
+            useReportBase
+              ? "XML sitemap oluşturup Search Console'a gönderin"
+              : "Tüm görsellere alt etiketleri ekleyin"
           ],
           d60: [
-            "İç bağlantı stratejisi kurun (topic clusters)",
-            "Open Graph ve Twitter Card meta etiketlerini ekleyin",
-            "Core Web Vitals optimizasyonu yapın (görsel sıkıştırma, lazy loading)",
-            "Schema markup (structured data) ekleyin"
+            useReportBase
+              ? "Rapordaki orta öncelikli eksikleri giderin"
+              : "İç bağlantı stratejisi kurun (topic clusters)",
+            useReportBase
+              ? "Sayfa hızı optimizasyonu yapın"
+              : "Open Graph ve Twitter Card meta etiketlerini ekleyin",
+            "Core Web Vitals optimizasyonu yapın"
           ],
           d90: [
-            "İçerik takvimi oluşturun ve düzenli blog yazıları yayınlayın",
+            useReportBase
+              ? `Hedef skor ${Math.min(100, (currentScore || 60) + 25)}+ için uzun vadeli strateji`
+              : "İçerik takvimi oluşturun ve düzenli blog yazıları yayınlayın",
             "Backlink stratejisi geliştirin",
-            "Yerel SEO optimizasyonu yapın (Google My Business)",
             "Rekabetçi analiz yapıp eksik anahtar kelimeleri hedefleyin"
           ]
         },
         notes: [
-          "Bu öneriler mevcut SEO skorunuz (" + (currentScore || "bilinmiyor") + ") temel alınarak hazırlandı.",
-          "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün.",
+          useReportBase
+            ? `Bu öneriler mevcut rapor analizi (skor: ${currentScore || 'bilinmiyor'}) temel alınarak hazırlandı.`
+            : "Bu öneriler genel SEO best practice'leri temel alınarak hazırlandı.",
+          useReportBase
+            ? "Rapordaki eksiklikleri öncelik sırasına göre uygulayın."
+            : "Değişiklikleri uyguladıktan sonra 2-4 hafta bekleyip sonuçları ölçün.",
           "Google Search Console'u mutlaka kurun ve düzenli takip edin."
         ]
       };
