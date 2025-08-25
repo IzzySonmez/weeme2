@@ -48,27 +48,18 @@ const platformNames = {
   facebook: 'Facebook',
 };
 
-const defaultHashtags = {
-  linkedin: ['#iş', '#kariyer', '#pazarlama'],
-  instagram: ['#instagram', '#sosyalmedya', '#içerik'],
-  twitter: ['#seo', '#growth', '#marketing'],
-  facebook: ['#topluluk', '#paylaşım', '#pazarlama'],
-} as Record<Platform, string[]>;
 
 const presetIdeas = [
-  'Yeni ürün lansmanı duyurusu',
-  'Haftalık ipuçları: SEO hızlı kazanımlar',
-  'Müşteri başarı hikayesi (case study) özeti',
-  'Ekip/kültür paylaşımı',
-  'Trend bir konuya görüş ekleme (thought leadership)',
+  'SEO ipuçları: 2024 Google algoritma güncellemeleri',
+  'Dijital pazarlama trendleri ve gelecek öngörüleri',
+  'E-ticaret dönüşüm oranı artırma stratejileri',
+  'İçerik pazarlaması ROI ölçüm yöntemleri',
+  'Sosyal medya algoritmaları nasıl çalışır?',
+  'B2B lead generation en etkili kanallar',
+  'Google Ads vs Facebook Ads: Hangisi daha karlı?',
+  'Influencer marketing bütçe optimizasyonu',
 ];
 
-const tonePreambles: Record<Tone, string> = {
-  bilgilendirici: 'Bilgilendirici bir dille, net ve veri odaklı:',
-  samimi: 'Samimi, sıcak ve günlük konuşma diliyle:',
-  profesyonel: 'Kurumsal ve profesyonel bir üslupla:',
-  eğlenceli: 'Hafif mizahi ve enerjik bir dille:',
-};
 
 const AIContent: React.FC = () => {
   const { user } = useAuth();
@@ -78,7 +69,7 @@ const AIContent: React.FC = () => {
   const [tone, setTone] = useState<Tone>('profesyonel');
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [hashtagCount, setHashtagCount] = useState(3);
-  const [targetLength, setTargetLength] = useState(120); // karakter hedefi (özellikle twitter için faydalı)
+  const [targetLength, setTargetLength] = useState(120);
 
   const [generatedContent, setGeneratedContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -114,71 +105,61 @@ const AIContent: React.FC = () => {
   const hardLimit = PLATFORM_LIMITS[platform];
   const overLimit = generatedContent && generatedContent.length > hardLimit;
 
-  const applyLengthGuard = (text: string) => {
-    if (text.length <= hardLimit) return text;
-    // Karakter limitini aşarsa kibarca kırp
-    return text.slice(0, hardLimit - 1) + '…';
-  };
 
   const selectPreset = (idea: string) => setPrompt(idea);
 
-  const randomizedHashtags = (p: Platform) =>
-    defaultHashtags[p].slice(0, hashtagCount).join(' ');
+  const callOpenAI = async (): Promise<string> => {
+    try {
+      const base = (import.meta as any).env?.VITE_API_BASE || "";
+      const url = `${base}/api/ai-content`;
+      
+      const body = {
+        platform,
+        prompt: prompt.trim(),
+        tone,
+        includeEmojis,
+        hashtagCount,
+        targetLength: platform === 'twitter' ? targetLength : null,
+        characterLimit: hardLimit,
+      };
 
-  const sprinkleEmojis = (p: Platform) => {
-    if (!includeEmojis) return { lead: '', end: '' };
-    const map: Record<Platform, { lead: string; end: string[] }> = {
-      linkedin: { lead: '🚀 ', end: ['💡', '📈', '🤝', '✅'] },
-      instagram: { lead: '✨ ', end: ['📸', '💫', '🔥', '🚀'] },
-      twitter: { lead: '🔥 ', end: ['🧵', '✅', '📊', '🚀'] },
-      facebook: { lead: '👋 ', end: ['💬', '📣', '🎯', '👏'] },
-    };
-    const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-    return { lead: map[p].lead, end: pick(map[p].end) };
+      console.log('[DEBUG] AI Content request:', body);
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      console.log('[DEBUG] AI Content response status:', resp.status);
+
+      if (!resp.ok) {
+        console.error('[DEBUG] AI Content API error:', resp.status);
+        throw new Error('API request failed');
+      }
+
+      const json = await resp.json();
+      console.log('[DEBUG] AI Content response:', json);
+      
+      return json?.content || 'İçerik üretilemedi.';
+    } catch (error) {
+      console.error('[DEBUG] AI Content request failed:', error);
+      throw error;
+    }
   };
 
-  const generateMock = (p: Platform, topic: string, t: Tone) => {
-    // temel iskelet + platform pratikleri
-    const { lead, end } = sprinkleEmojis(p);
-    const bullets = (points: string[]) => points.map((x) => `• ${x}`).join('\n');
-
-    const commonTips = [
-      'Net bir CTA ekleyin',
-      'Gereksiz jargondan kaçının',
-      'Takipçiye değer katın',
-    ];
-
-    const platforms: Record<Platform, string> = {
-      linkedin: `${lead}${topic}\n\n${tonePreambles[t]}\n${bullets([
-        'Sorunu/bağlamı 1-2 cümlede tanımlayın',
-        'Somut çıkarımlar ve kısa ipuçları verin',
-        'Gerekiyorsa küçük bir istatistik veya örnek ekleyin',
-      ])}\n\n${bullets(commonTips)}\n\n${randomizedHashtags('linkedin')} ${end}`,
-      instagram: `${lead}${topic} ✨\n\n${bullets([
-        'Görsel(ler)inizle uyumlu kısa bir hikâye anlatın',
-        '1-2 soru ile etkileşimi tetikleyin',
-        'Mini ipucu ya da adım listesi verin',
-      ])}\n\n${randomizedHashtags('instagram')} ${end}`,
-      twitter: `${lead}${topic}\n\n${bullets([
-        'Ana fikri 1 cümlede ver',
-        '1-2 pratik ipucu ekle',
-        'Soruyla bitir ve etkileşime çağır',
-      ])}\n\n${randomizedHashtags('twitter')} ${end}`,
-      facebook: `${lead}${topic}\n\n${bullets([
-        'Sorunu anlaşılır şekilde özetle',
-        'Kısa bir çözüm listesi paylaş',
-        'Topluluktan deneyim iste',
-      ])}\n\n${randomizedHashtags('facebook')} ${end}`,
+  const generateFallback = (): string => {
+    const platformTemplates = {
+      linkedin: `🚀 ${prompt || 'Dijital pazarlama stratejisi'}\n\nDijital pazarlama dünyasında sürekli değişen trendleri takip etmek kritik önemde. İşte dikkat etmeniz gereken 3 ana nokta:\n\n• Veri odaklı karar verme süreçleri\n• Müşteri deneyimi optimizasyonu\n• ROI ölçümü ve analiz\n\nSizin deneyimleriniz neler? Yorumlarda paylaşın! 💡\n\n#dijitalpazarlama #seo #marketing`,
+      
+      instagram: `✨ ${prompt || 'SEO ipuçları'} ✨\n\nBugün sizlerle SEO dünyasından pratik ipuçları paylaşıyorum! 📈\n\n🎯 Anahtar kelime araştırması yaparken:\n• Uzun kuyruk kelimeleri unutmayın\n• Rakip analizi yapın\n• Kullanıcı niyetini anlayın\n\nHangi SEO aracını kullanıyorsunuz? 👇\n\n#seo #dijitalpazarlama #marketing #webdesign #googleranking`,
+      
+      twitter: `🔥 ${prompt || 'Dijital pazarlama trendi'}\n\n2024'te dikkat edilmesi gereken 3 trend:\n\n1️⃣ AI destekli içerik üretimi\n2️⃣ Voice search optimizasyonu  \n3️⃣ Video-first stratejiler\n\nHangisini daha önce denediniz? 🚀\n\n#marketing #AI #seo`,
+      
+      facebook: `👋 Dijital pazarlama topluluğu!\n\n${prompt || 'SEO stratejileri'} konusunda deneyimlerinizi merak ediyorum.\n\nÖzellikle şu konularda:\n• Organik trafik artırma yöntemleri\n• İçerik pazarlama stratejileri\n• Sosyal medya entegrasyonu\n\nSizin en etkili bulduğunuz yöntem hangisi? Deneyimlerinizi paylaşır mısınız? 💬\n\n#dijitalpazarlama #seo #marketing #topluluk`
     };
 
-    let text = platforms[p];
-
-    // kabaca hedef uzunluk için kısaltma
-    if (p === 'twitter' && targetLength > 0) {
-      if (text.length > targetLength) text = text.slice(0, targetLength - 1) + '…';
-    }
-
-    return applyLengthGuard(text);
+    return platformTemplates[platform];
   };
 
   const generateContent = async () => {
@@ -191,9 +172,8 @@ const AIContent: React.FC = () => {
 
     setLoading(true);
 
-    // demo: AI çağrısı yerine mock üretim
-    setTimeout(() => {
-      const content = generateMock(platform, prompt.trim(), tone);
+    try {
+      const content = await callOpenAI();
 
       setGeneratedContent(content);
 
@@ -207,8 +187,25 @@ const AIContent: React.FC = () => {
       };
 
       saveHistory(newContent);
+    } catch (error) {
+      console.error('AI content generation failed:', error);
+      // Fallback to template-based generation
+      const fallbackContent = generateFallback();
+      setGeneratedContent(fallbackContent);
+      
+      const newContent: AIContentType = {
+        id: Date.now().toString(),
+        userId: user.id,
+        platform,
+        prompt,
+        content: fallbackContent,
+        createdAt: new Date().toISOString(),
+      };
+      
+      saveHistory(newContent);
+    } finally {
       setLoading(false);
-    }, 850);
+    }
   };
 
   const copyToClipboard = async (content: string, id: string) => {

@@ -576,10 +576,159 @@ JSON FORMAT:
   }
 });
 
+app.post("/api/ai-content", async (req, res) => {
+  try {
+    if (!OPENAI_KEY) {
+      console.error("[ERROR] OPENAI_API_KEY missing for AI content generation");
+      return res.status(503).json({ 
+        error: "OPENAI_API_KEY missing",
+        debug: {
+          cwd: process.cwd(),
+          envFile: process.cwd() + '/.env.local'
+        }
+      });
+    }
+
+    const { platform, prompt, tone, includeEmojis, hashtagCount, targetLength, characterLimit } = req.body || {};
+
+    if (!platform || !prompt) {
+      console.error("[ERROR] Missing required fields:", { platform, prompt: !!prompt });
+      return res.status(400).json({ error: "Missing platform or prompt" });
+    }
+
+    console.log("[INFO] AI Content generation request:", { platform, tone, includeEmojis, hashtagCount, targetLength });
+
+    // Platform-specific system prompts
+    const platformSpecs = {
+      linkedin: {
+        audience: "profesyoneller, iş dünyası, B2B",
+        style: "profesyonel, thought leadership, networking odaklı",
+        features: "uzun form içerik, industry insights, career tips",
+        hashtags: "#dijitalpazarlama #seo #linkedin #b2b #marketing #kariyer #iş #networking",
+        cta: "Yorumlarda deneyimlerinizi paylaşın, bağlantı kuralım"
+      },
+      instagram: {
+        audience: "geniş kitle, görsel odaklı, genç demografik",
+        style: "görsel destekli, hikaye anlatımı, trend odaklı",
+        features: "kısa paragraflar, emoji kullanımı, story-friendly",
+        hashtags: "#instagram #dijitalpazarlama #seo #marketing #sosyalmedya #içerik #trend #viral",
+        cta: "Beğen, kaydet, arkadaşlarını etiketle"
+      },
+      twitter: {
+        audience: "hızlı bilgi tüketicileri, tech-savvy, trend takipçileri",
+        style: "kısa ve öz, viral potansiyeli, thread formatı",
+        features: "280 karakter sınırı, retweet odaklı, trending topics",
+        hashtags: "#seo #marketing #digitalmarketing #twitter #tech #growth #startup",
+        cta: "RT, beğen, thread'i takip et"
+      },
+      facebook: {
+        audience: "geniş yaş aralığı, topluluk odaklı, aile/arkadaş çevresi",
+        style: "samimi, topluluk odaklı, tartışma başlatıcı",
+        features: "uzun açıklamalar, grup paylaşımları, engagement odaklı",
+        hashtags: "#facebook #dijitalpazarlama #seo #marketing #topluluk #paylaşım #tartışma",
+        cta: "Yorumla, paylaş, arkadaşlarına öner"
+      }
+    };
+
+    const spec = platformSpecs[platform];
+    if (!spec) {
+      return res.status(400).json({ error: "Unsupported platform" });
+    }
+
+    // Tone descriptions
+    const toneStyles = {
+      profesyonel: "Kurumsal, ciddi, uzman dili kullan. İstatistik ve veri ekle. Formal üslup.",
+      bilgilendirici: "Eğitici, net, adım adım açıklayıcı. Pratik bilgiler ver. Öğretici ton.",
+      samimi: "Sıcak, yakın, günlük konuşma dili. Kişisel deneyimler ekle. Dostça yaklaşım.",
+      eğlenceli: "Hafif mizahi, enerjik, yaratıcı. Eğlenceli örnekler kullan. Pozitif enerji."
+    };
+
+    const systemPrompt = `Sen dünya çapında tanınmış bir dijital pazarlama ve SEO uzmanısın. ${platform.toUpperCase()} için içerik üretiyorsun.
+
+PLATFORM ÖZELLİKLERİ:
+- Hedef Kitle: ${spec.audience}
+- İçerik Stili: ${spec.style}
+- Platform Özellikleri: ${spec.features}
+- Karakter Sınırı: ${characterLimit}
+- Ton: ${toneStyles[tone]}
+
+İÇERİK KURALLARI:
+1. SADECE içeriği döndür, açıklama yapma
+2. ${characterLimit} karakter sınırını aşma
+3. ${includeEmojis ? 'Uygun emojiler kullan' : 'Emoji kullanma'}
+4. ${hashtagCount} adet hashtag ekle: ${spec.hashtags} listesinden seç
+5. Platform-specific CTA ekle: ${spec.cta}
+6. Dijital pazarlama/SEO uzmanı gibi konuş
+7. Pratik, uygulanabilir bilgiler ver
+8. Güncel trendleri ve best practice'leri dahil et
+
+${platform === 'twitter' && targetLength ? `TWITTER ÖZELİ: ${targetLength} karakter hedefle, kısa ve etkili ol.` : ''}
+
+İÇERİK YAPISI:
+- Hook (dikkat çekici başlangıç)
+- Ana içerik (değer katacak bilgi/ipucu)
+- CTA (etkileşim çağrısı)
+- Hashtag'ler
+
+UZMANLIK ALANLARIN: SEO, Google Ads, Facebook Ads, İçerik Pazarlama, Sosyal Medya Pazarlama, E-ticaret, Analytics, Conversion Optimization, Email Marketing, Influencer Marketing`;
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Konu: ${prompt}\n\nBu konu hakkında ${platform} için ${tone} tonunda, dijital pazarlama uzmanı perspektifinden içerik üret. Pratik ipuçları, güncel trendler ve uygulanabilir stratejiler dahil et.` }
+    ];
+
+    const body = {
+      model: "gpt-4o-mini",
+      messages,
+      temperature: 0.7, // Yaratıcılık için biraz daha yüksek
+      max_tokens: Math.min(1000, Math.ceil(characterLimit / 2)), // Karakter sınırına göre ayarla
+      presence_penalty: 0.3, // Tekrarları azalt
+      frequency_penalty: 0.3 // Çeşitliliği artır
+    };
+
+    console.log("[INFO] Making OpenAI request for AI content generation");
+
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_KEY}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+      const text = await r.text();
+      console.error("[ERROR] OpenAI API error in AI content:", r.status, text);
+      return res.status(r.status).json({ error: "openai_error", detail: text });
+    }
+
+    const data = await r.json();
+    const content = data?.choices?.[0]?.message?.content || "";
+
+    console.log("[DEBUG] Raw OpenAI content response:", content.substring(0, 200) + "...");
+
+    // Clean and validate content
+    let cleanContent = content.trim();
+    
+    // Apply character limit if exceeded
+    if (cleanContent.length > characterLimit) {
+      console.log("[INFO] Content exceeds limit, trimming:", cleanContent.length, "->", characterLimit);
+      cleanContent = cleanContent.substring(0, characterLimit - 3) + "...";
+    }
+
+    console.log("[INFO] AI content generation successful, length:", cleanContent.length);
+    return res.json({ ok: true, content: cleanContent });
+
+  } catch (e) {
+    console.error("[ERROR] Server error in /api/ai-content:", e);
+    return res.status(500).json({ error: "server_error", detail: String(e) });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[weeme.ai] API proxy running on http://localhost:${PORT}`);
   console.log(`[DEBUG] OpenAI API Key configured: ${OPENAI_KEY ? 'YES' : 'NO'}`);
   if (OPENAI_KEY) {
     console.log(`[DEBUG] API Key starts with: ${OPENAI_KEY.substring(0, 7)}...`);
   }
-});
