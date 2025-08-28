@@ -105,7 +105,7 @@ console.log(`[INFO] OpenAI API Key: ${OPENAI_KEY ? 'Present' : 'Not configured'}
 
 const isValidOpenAIKey = (key) => {
   if (!key) return false;
-  if (key.includes('placeholder') || key.includes('buraya_') || key.includes('your-') || key.includes('sk-test-')) return false;
+  if (key.includes('placeholder') || key.includes('buraya_') || key.includes('your-') || key.includes('sk-test-') || key.includes('sk-your-actual')) return false;
   if (key.length < 20) return false;
   return key.startsWith('sk-');
 };
@@ -265,32 +265,61 @@ app.post("/api/seo-scan",
       
       // Try AI analysis first
       try {
-        const systemPrompt = `Sen profesyonel bir SEO uzmanısın. Verilen HTML içeriğini detaylı analiz edip SADECE JSON formatında yanıt ver.
+        const systemPrompt = `Sen dünya çapında tanınmış bir SEO uzmanısın. 15+ yıl deneyimin var. Verilen website'i derinlemesine analiz et.
+
+GÖREV: Bu website için kapsamlı SEO analizi yap ve SADECE JSON formatında yanıt ver.
+
+ANALİZ KRİTERLERİ:
+1. Teknik SEO (meta tags, headings, sitemap, robots.txt)
+2. İçerik kalitesi ve anahtar kelime optimizasyonu
+3. Sayfa hızı ve Core Web Vitals
+4. Mobil uyumluluk
+5. Güvenlik (SSL, HTTPS)
+6. Kullanıcı deneyimi faktörleri
+7. Sosyal medya entegrasyonu
+8. Structured data markup
+9. İç ve dış bağlantı yapısı
+10. Yerel SEO faktörleri (varsa)
 
 JSON FORMAT:
 {
-  "score": number (0-100),
-  "positives": ["Gerçekten mevcut olan pozitif özellikler"],
-  "negatives": ["Gerçekten eksik olan özellikler"],
-  "suggestions": ["Detaylı, uygulanabilir öneriler"],
+  "score": number (0-100, gerçekçi değerlendirme),
+  "positives": ["Tespit edilen güçlü yönler - minimum 3, maksimum 8"],
+  "negatives": ["Kritik eksiklikler ve sorunlar - minimum 2, maksimum 6"],
+  "suggestions": ["Öncelik sırasına göre detaylı, uygulanabilir öneriler - minimum 5, maksimum 10"],
   "reportData": {
     "metaTags": boolean,
     "headings": boolean,
     "images": boolean,
-    "performance": number,
+    "performance": number (0-100),
     "mobileOptimization": boolean,
     "sslCertificate": boolean,
-    "pageSpeed": number,
-    "keywords": ["gerçek anahtar kelimeler"]
+    "pageSpeed": number (0-100),
+    "keywords": ["tespit edilen anahtar kelimeler - minimum 3"],
+    "structuredData": boolean,
+    "socialMediaTags": boolean,
+    "internalLinks": number,
+    "contentLength": number,
+    "h1Count": number,
+    "imageAltTags": number
   }
-}`;
+}
 
-        const userPrompt = `URL: ${url}\n\nHTML İçeriği:\n${html.slice(0, 5000)}\n\nBu websiteyi analiz edip detaylı SEO önerileri ver.`;
+ÖNEMLİ: Sadece gerçekten tespit ettiğin özellikleri rapor et. Varsayımda bulunma.`;
+
+        const userPrompt = `WEBSITE ANALİZİ:
+URL: ${url}
+HTML İçerik Uzunluğu: ${html.length} karakter
+
+HTML İÇERİK (İlk 8000 karakter):
+${html.slice(0, 8000)}
+
+Bu website için kapsamlı SEO analizi yap. Gerçek verilere dayalı, uygulanabilir öneriler ver.`;
 
         const aiResponse = await callOpenAI([
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
-        ], { timeout: 25000 });
+        ], { timeout: 30000, max_tokens: 6000 });
 
         let cleanedResponse = aiResponse.trim();
         if (cleanedResponse.startsWith('```json')) {
@@ -299,9 +328,20 @@ JSON FORMAT:
 
         report = JSON.parse(cleanedResponse);
         
-        // Validate report structure
-        if (typeof report.score !== 'number' || !Array.isArray(report.positives)) {
+        // Validate and enhance report structure
+        if (typeof report.score !== 'number' || !Array.isArray(report.positives) || !Array.isArray(report.negatives)) {
           throw new Error('Invalid report structure');
+        }
+
+        // Ensure minimum data quality
+        if (report.positives.length < 2) {
+          report.positives.push("Website erişilebilir durumda ve temel HTML yapısı mevcut");
+        }
+        if (report.negatives.length < 1) {
+          report.negatives.push("Detaylı analiz için daha fazla veri gerekli");
+        }
+        if (report.suggestions.length < 3) {
+          report.suggestions.push("SEO performansını artırmak için düzenli analiz yapın");
         }
 
         console.log(`[SUCCESS] AI analysis completed for ${url}, score: ${report.score}`);
