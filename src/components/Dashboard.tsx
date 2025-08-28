@@ -251,20 +251,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
       return;
     }
     
+    console.log('[DEBUG] Starting SEO scan for:', websiteUrl);
     setIsScanning(true);
     try {
       const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+      console.log('[DEBUG] API base URL:', base);
+      
       const response = await fetch(`${base}/api/seo-scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: websiteUrl })
       });
 
-      console.log('[DEBUG] SEO scan response status:', response.status);
+      console.log('[DEBUG] SEO scan response:', response.status, response.statusText);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('[DEBUG] SEO scan result:', result);
+        console.log('[SUCCESS] SEO scan completed:', {
+          score: result.report?.score,
+          positives: result.report?.positives?.length,
+          negatives: result.report?.negatives?.length
+        });
         
         if (result.ok && result.report) {
           // Create new report with proper structure
@@ -286,22 +293,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
           
           // Deduct credit for Free users
           if (user.membershipType === 'Free') {
-            // This should be handled by AuthContext
-            console.log('[INFO] Credit deducted for Free user');
+            const { updateCredits } = useAuth();
+            updateCredits(user.credits - 1);
+            console.log('[INFO] Credit deducted, remaining:', user.credits - 1);
           }
           
-          alert(`SEO taraması tamamlandı! Skor: ${result.report.score}/100`);
+          alert(`🎉 SEO taraması tamamlandı!\n\n📊 Skor: ${result.report.score}/100\n✅ ${result.report.positives?.length || 0} olumlu nokta\n⚠️ ${result.report.negatives?.length || 0} iyileştirme alanı`);
         } else {
           throw new Error(result.message || 'Tarama başarısız');
         }
       } else {
         const errorText = await response.text();
         console.error('[ERROR] SEO scan failed:', response.status, errorText);
-        throw new Error(`Tarama başarısız: ${response.status}`);
+        
+        let userMessage = 'Tarama başarısız oldu.';
+        if (response.status === 400) userMessage = 'Geçersiz URL formatı. Lütfen doğru URL girin.';
+        else if (response.status === 429) userMessage = 'Çok fazla istek. Lütfen biraz bekleyin.';
+        else if (response.status >= 500) userMessage = 'Server hatası. Lütfen daha sonra tekrar deneyin.';
+        
+        throw new Error(userMessage);
       }
     } catch (error) {
       console.error('[ERROR] Scan error:', error);
-      alert(`Tarama hatası: ${error.message}`);
+      alert(`❌ ${error.message}`);
     } finally {
       setIsScanning(false);
     }

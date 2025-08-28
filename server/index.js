@@ -10,6 +10,24 @@ import { config } from 'dotenv';
 // Load environment variables
 config({ path: '.env.local' });
 
+// Validate environment on startup
+const validateEnvironment = () => {
+  console.log('[STARTUP] Environment validation...');
+  console.log('[STARTUP] NODE_ENV:', process.env.NODE_ENV || 'development');
+  console.log('[STARTUP] API_PORT:', process.env.API_PORT || '8787');
+  
+  if (OPENAI_KEY) {
+    if (OPENAI_KEY.startsWith('sk-') && OPENAI_KEY.length > 20) {
+      console.log('[STARTUP] ✅ OpenAI API Key: Valid format');
+    } else {
+      console.log('[STARTUP] ⚠️  OpenAI API Key: Invalid format');
+    }
+  } else {
+    console.log('[STARTUP] ⚠️  OpenAI API Key: Not configured (fallback mode)');
+  }
+  console.log('[STARTUP] Environment validation complete\n');
+};
+
 const app = express();
 
 // Security middleware
@@ -736,12 +754,18 @@ app.use((req, res) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`[SUCCESS] weeme.ai server running on http://localhost:${PORT}`);
-  console.log('[INFO] All AI systems ready!');
-  if (!OPENAI_KEY) {
-    console.log('[WARNING] OpenAI API key not configured - using fallback mode');
-    console.log('[INFO] Add OPENAI_API_KEY to .env.local for full AI features');
-  }
+  console.log('🚀 ===================================');
+  console.log(`🚀 weeme.ai SERVER READY!`);
+  console.log(`🚀 URL: http://localhost:${PORT}`);
+  console.log(`🚀 Mode: ${OPENAI_KEY ? 'AI-Powered' : 'Fallback'}`);
+  console.log('🚀 ===================================');
+  console.log('');
+  console.log('📊 Available endpoints:');
+  console.log('   POST /api/seo-scan - SEO site analysis');
+  console.log('   POST /api/seo-suggestions - AI SEO recommendations');
+  console.log('   POST /api/ai-content - AI content generation');
+  console.log('   GET  /health - Health check');
+  console.log('');
 });
 
 // Graceful shutdown
