@@ -227,8 +227,10 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   const callOpenAI = async (): Promise<AIStruct> => {
     try {
-      const base = import.meta.env?.VITE_API_BASE || "http://localhost:8787";
+      const base = import.meta.env?.VITE_API_BASE || 'http://localhost:8787';
       const url = `${base}/api/seo-suggestions`;
+      
+      console.log('[DEBUG] Making suggestions API call to:', url);
       
       const body = {
         prompt: buildUserPrompt(),
@@ -239,6 +241,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
         useReportBase,
       };
 
+      console.log('[DEBUG] Suggestions request body:', body);
+      
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,7 +250,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
       });
 
       if (!resp.ok) {
-        console.error('[ERROR] Suggestions API error:', resp.status);
+        const errorText = await resp.text();
+        console.error('[ERROR] Suggestions API error:', resp.status, errorText);
         return offlineGenerate();
       }
 

@@ -179,8 +179,10 @@ const AIContent: React.FC = () => {
 
   const callOpenAI = async (): Promise<string> => {
     try {
-      const base = import.meta.env?.VITE_API_BASE || "http://localhost:8787";
+      const base = import.meta.env?.VITE_API_BASE || 'http://localhost:8787';
       const url = `${base}/api/ai-content`;
+      
+      console.log('[DEBUG] Making AI content API call to:', url);
       
       const body = {
         platform,
@@ -196,6 +198,8 @@ const AIContent: React.FC = () => {
         membershipType: user?.membershipType || "Free",
       };
 
+      console.log('[DEBUG] AI content request body:', body);
+      
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -205,7 +209,7 @@ const AIContent: React.FC = () => {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error('[ERROR] AI Content API error:', resp.status, errorText);
-        throw new Error(`API request failed: ${resp.status}`);
+        return generateFallback();
       }
 
       const json = await resp.json();
