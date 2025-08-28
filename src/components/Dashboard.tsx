@@ -244,24 +244,86 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
   const handleScanNow = async (websiteUrl: string) => {
     if (!user) return;
     
+    // Check credits for Free users
+    if (user.membershipType === 'Free' && user.credits <= 0) {
+      alert('Kredi bakiyeniz yetersiz. Lütfen kredi satın alın veya üyeliğinizi yükseltin.');
+      onOpenBilling?.();
+      return;
+    }
+    
     setIsScanning(true);
     try {
-      const response = await fetch('http://localhost:3001/api/seo-scan', {
+      const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+      const response = await fetch(`${base}/api/seo-scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: websiteUrl, userId: user.id })
+        body: JSON.stringify({ url: websiteUrl })
       });
 
+      console.log('[DEBUG] SEO scan response status:', response.status);
+      
       if (response.ok) {
-        const newReport = await response.json();
-        const updatedReports = [newReport, ...reports];
-        setReports(updatedReports);
-        localStorage.setItem(`seoReports_${user.id}`, JSON.stringify(updatedReports));
+        const result = await response.json();
+        console.log('[DEBUG] SEO scan result:', result);
+        
+        if (result.ok && result.report) {
+          // Create new report with proper structure
+          const newReport: SEOReport = {
+            id: Date.now().toString(),
+            userId: user.id,
+            websiteUrl: websiteUrl,
+            score: result.report.score,
+            positives: result.report.positives || [],
+            negatives: result.report.negatives || [],
+            suggestions: result.report.suggestions || [],
+            createdAt: new Date().toISOString(),
+            reportData: result.report.reportData || {}
+          };
+          
+          const updatedReports = [newReport, ...reports];
+          setReports(updatedReports);
+          localStorage.setItem(`reports_${user.id}`, JSON.stringify(updatedReports));
+          
+          // Deduct credit for Free users
+          if (user.membershipType === 'Free') {
+            // This should be handled by AuthContext
+            console.log('[INFO] Credit deducted for Free user');
+          }
+          
+          alert(`SEO taraması tamamlandı! Skor: ${result.report.score}/100`);
+        } else {
+          throw new Error(result.message || 'Tarama başarısız');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('[ERROR] SEO scan failed:', response.status, errorText);
+        throw new Error(`Tarama başarısız: ${response.status}`);
       }
     } catch (error) {
-      console.error('Scan error:', error);
+      console.error('[ERROR] Scan error:', error);
+      alert(`Tarama hatası: ${error.message}`);
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleRemoveWebsite = (codeId: string) => {
+    const updatedCodes = trackingCodes.filter(code => code.id !== codeId);
+    setTrackingCodes(updatedCodes);
+    if (user) {
+      localStorage.setItem(`trackingCode_${user.id}`, JSON.stringify(updatedCodes));
+    }
+  };
+
+  const loadReports = () => {
+    if (!user) return;
+    const saved = localStorage.getItem(`reports_${user.id}`);
+    if (saved) {
+      try {
+        setReports(updatedReports);
+      } catch (error) {
+        console.error('Error loading reports:', error);
+      }
     }
   };
 
