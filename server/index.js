@@ -477,102 +477,164 @@ app.post("/api/ai-content",
     }
 
     try {
-      const systemPrompt = `Sen dünya çapında tanınmış bir sosyal medya stratejisti ve içerik uzmanısın. 10+ yıl deneyimin var.
+      const systemPrompt = `Sen dünya çapında tanınmış bir sosyal medya stratejisti ve içerik uzmanısın. 15+ yıl deneyimin var.
 
-PLATFORM: ${platform}
+PLATFORM UZMANLIKLARIN: ${platform.toUpperCase()}
 UZMANLIKLARIN:
-- ${platform === 'linkedin' ? 'B2B içerik stratejisi, thought leadership, profesyonel networking' : ''}
-- ${platform === 'instagram' ? 'Görsel hikaye anlatımı, hashtag stratejisi, engagement artırma' : ''}
-- ${platform === 'twitter' ? 'Viral içerik, trend takibi, kısa ve etkili mesajlar' : ''}
-- ${platform === 'facebook' ? 'Topluluk yönetimi, uzun form içerik, organik reach' : ''}
-- Algoritma optimizasyonu
-- Audience engagement stratejileri
-- Content marketing ROI
+${platform === 'linkedin' ? `
+- B2B içerik stratejisi ve thought leadership
+- Profesyonel networking ve industry insights
+- LinkedIn algoritması optimizasyonu (engagement bait, native video, carousel posts)
+- C-level executive content ve personal branding
+- Lead generation ve sales funnel optimization` : ''}
+${platform === 'instagram' ? `
+- Görsel hikaye anlatımı ve aesthetic branding
+- Instagram algoritması (Reels, Stories, IGTV optimization)
+- Hashtag stratejisi ve community building
+- Influencer marketing ve UGC campaigns
+- Shopping integration ve e-commerce optimization` : ''}
+${platform === 'twitter' ? `
+- Viral content creation ve trend hijacking
+- Twitter algoritması (engagement rate, reply threads)
+- Real-time marketing ve newsjacking
+- Twitter Spaces ve community building
+- Crisis management ve brand reputation` : ''}
+${platform === 'facebook' ? `
+- Facebook algoritması (meaningful social interactions)
+- Community management ve Facebook Groups
+- Facebook Ads integration ve organic reach
+- Video content optimization (Facebook Watch)
+- Cross-platform content distribution` : ''}
 
-GÖREV: ${platform} için yüksek engagement alacak, profesyonel ve özgün içerik üret.
+GENEL UZMANLIKLARIN:
+- Platform algoritmaları ve ranking faktörleri
+- Audience psychology ve behavioral triggers
+- Content marketing ROI ve performance metrics
+- A/B testing ve conversion optimization
+- Brand voice development ve consistency
+
+GÖREV: ${platform.toUpperCase()} için yüksek engagement alacak, viral potansiyeli olan, profesyonel ve özgün içerik üret.
 
 İÇERİK KRİTERLERİ:
-- Platform algoritmasına uygun
-- Hedef kitleye özel
-- Eyleme teşvik edici
-- Değer katacak bilgi içeren
-- Özgün ve yaratıcı
+- Platform algoritmasına %100 uygun (engagement signals optimize)
+- Hedef kitleye özel ve persona-driven
+- Eyleme teşvik edici (clear CTA)
+- Değer katacak bilgi içeren (educational/entertaining/inspiring)
+- Özgün ve yaratıcı (copycat değil)
+- Trend-aware ve timely
+- Brand voice'a uygun
 ${characterLimit ? `- Maksimum ${characterLimit} karakter` : ''}
 ${targetLength ? `- Hedef uzunluk: ${targetLength} karakter` : ''}
 
-PLATFORM ÖZELLİKLERİ:
-${platform === 'linkedin' ? '- Profesyonel ton, industry insights, networking odaklı' : ''}
-${platform === 'instagram' ? '- Görsel odaklı, hikaye anlatımı, lifestyle elements' : ''}
-${platform === 'twitter' ? '- Kısa ve öz, trend odaklı, conversation starter' : ''}
-${platform === 'facebook' ? '- Topluluk odaklı, discussion starter, longer form' : ''}
+PLATFORM-SPESİFİK OPTİMİZASYON:
+${platform === 'linkedin' ? `
+- Profesyonel ton ama kişisel hikaye elementi
+- Industry insights ve data-driven content
+- Networking ve relationship building odaklı
+- Thought leadership positioning
+- B2B decision makers'a hitap eden dil` : ''}
+${platform === 'instagram' ? `
+- Görsel odaklı ve aesthetic appeal
+- Hikaye anlatımı ve behind-the-scenes content
+- Lifestyle elements ve aspirational messaging
+- Community building ve user interaction
+- Stories ve Reels için optimize format` : ''}
+${platform === 'twitter' ? `
+- Kısa, öz ve punch line odaklı
+- Trend odaklı ve real-time relevance
+- Conversation starter ve reply-worthy
+- Thread potential (1/n format)
+- Retweet ve quote tweet optimize` : ''}
+${platform === 'facebook' ? `
+- Topluluk odaklı ve discussion starter
+- Longer form content ve storytelling
+- Family-friendly ve inclusive tone
+- Share-worthy ve comment-generating
+- Cross-generational appeal` : ''}
 
-SADECE İÇERİK METNINI DÖNDÜR. Ek açıklama yapma.`;
+SADECE İÇERİK METNİNİ DÖNDÜR. Ek açıklama, başlık veya yorum yapma. Direkt paylaşılabilir format.`;
 
       const userPrompt = `İÇERİK TALEBİ:
-Konu: ${prompt || 'Sektör hakkında değerli bilgi paylaş'}
+Konu: ${prompt || `${industry || 'Genel'} sektörü hakkında değerli bilgi paylaş`}
 Sektör: ${industry || 'genel'}
 Hedef Kitle: ${audience || 'genel'}
-Ton: ${tone || 'profesyonel'}
 İş Hedefi: ${businessGoal || 'farkındalık artırma'}
+Ton: ${tone || 'profesyonel'}
 Emoji Kullan: ${includeEmojis ? 'evet' : 'hayır'}
 Hashtag Sayısı: ${hashtagCount || 3}
+${targetLength ? `Hedef Uzunluk: ${targetLength} karakter` : ''}
 
-Bu bilgilere göre ${platform} için yüksek engagement alacak özgün içerik üret.`;
+ÖZEL TALİMATLAR:
+- Bu parametrelere göre ${platform.toUpperCase()} için yüksek engagement alacak özgün içerik üret
+- Platform algoritmasını göz önünde bulundur
+- Hedef kitleye özel dil ve ton kullan
+- Viral potansiyeli olan hooks ve angles kullan
+- Actionable insights ve value proposition dahil et
+- Authentic ve relatable ol, robotic değil
+
+ÇIKTI: Sadece içerik metni, ek açıklama yok.`;
 
       const content = await callOpenAI([
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
-      ], { timeout: 25000, max_tokens: 2000 });
+      ], { timeout: 45000, max_tokens: 3000, temperature: 0.7 });
 
       res.json({ ok: true, content });
     } catch (error) {
       console.log(`[INFO] AI content generation failed, using enhanced fallback: ${error.message}`);
       // Fallback content
       const platformTemplates = {
-        linkedin: `${includeEmojis ? '🚀 ' : ''}${prompt || `${industry || 'Dijital'} sektöründe başarı için kritik stratejiler`}
+        linkedin: `${includeEmojis ? '🎯 ' : ''}${prompt || `${industry || 'Dijital'} sektöründe başarı için kritik stratejiler`}
 
-${industry || 'İş'} dünyasında sürekli değişen dinamikleri takip etmek başarının anahtarı. ${tone === 'profesyonel' ? 'Deneyimlerime dayanarak' : 'Gözlemlerime göre'} dikkat etmeniz gereken ana noktalar:
+${industry || 'İş'} dünyasında sürekli değişen dinamikleri takip etmek başarının anahtarı. ${tone === 'profesyonel' ? '15+ yıllık deneyimime dayanarak' : 'Gözlemlerime göre'} dikkat etmeniz gereken ana noktalar:
 
-${audience === 'b2b' ? '• Müşteri ihtiyaçlarını derinlemesine anlama' : '• Hedef kitlenizle güçlü bağ kurma'}
-• Veri odaklı karar verme süreçleri
-• Sürekli öğrenme ve adaptasyon
-• ${businessGoal === 'satış_artırma' ? 'Satış funnel optimizasyonu' : 'Marka değeri yaratma'}
+${audience === 'b2b' ? '🔍 Müşteri ihtiyaçlarını derinlemesine anlama ve pain point'leri çözme' : '🤝 Hedef kitlenizle güçlü bağ kurma ve trust building'}
+📊 Veri odaklı karar verme süreçleri ve KPI takibi
+🎓 Sürekli öğrenme ve market trendlerine adaptasyon
+${businessGoal === 'satış_artırma' ? '💰 Satış funnel optimizasyonu ve conversion artırma' : '🏆 Marka değeri yaratma ve thought leadership'}
 
-${tone === 'samimi' ? 'Sizin bu konudaki deneyimleriniz neler?' : 'Bu konudaki görüşlerinizi merak ediyorum.'} Yorumlarda paylaşalım! ${includeEmojis ? '💡' : ''}
+${tone === 'samimi' ? 'Sizin bu konudaki deneyimleriniz neler? Hangi stratejiler işinize yaradı?' : 'Bu konudaki görüşlerinizi ve deneyimlerinizi merak ediyorum.'} 
+
+Yorumlarda tartışalım! ${includeEmojis ? '💬👇' : ''}
 
 ${Array.from({length: hashtagCount}, (_, i) => 
   i === 0 ? `#${industry || 'business'}` :
   i === 1 ? '#strateji' :
-  i === 2 ? '#başarı' : '#growth'
+  i === 2 ? '#başarı' : 
+  i === 3 ? '#growth' :
+  i === 4 ? '#leadership' : '#innovation'
 ).join(' ')}`,
         
         instagram: `${includeEmojis ? '✨ ' : ''}${prompt || `${industry || 'Yaşam'} tarzınızı değiştirecek ipuçları`}${includeEmojis ? ' ✨' : ''}
 
-${tone === 'eğlenceli' ? 'Bugün sizlerle süper pratik' : 'Bugün sizlerle değerli'} ${industry || 'yaşam'} ipuçları paylaşıyorum! ${includeEmojis ? '📈' : ''}
+${tone === 'eğlenceli' ? 'Bugün sizlerle süper pratik ve game-changing' : 'Bugün sizlerle değerli ve actionable'} ${industry || 'yaşam'} ipuçları paylaşıyorum! ${includeEmojis ? '🔥📈' : ''}
 
-${includeEmojis ? '🎯 ' : ''}${audience === 'genç_yetişkin' ? 'Genç profesyoneller' : 'Herkes'} için önemli noktalar:
-• ${businessGoal === 'farkındalık_artırma' ? 'Bilinçli tercihler yapın' : 'Hedeflerinize odaklanın'}
-• Sürekli gelişim için öğrenmeye devam edin
-• ${tone === 'motivasyonel' ? 'Hayallerinizin peşinden gidin' : 'Planlı hareket edin'}
+${includeEmojis ? '🎯 ' : ''}${audience === 'genç_yetişkin' ? 'Genç profesyoneller ve career-focused kişiler' : 'Herkese uygun'} için game-changer noktalar:
 
-${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz?' : 'Deneyimlerinizi paylaşır mısınız?'} ${includeEmojis ? '👇' : 'Yorumlarda buluşalım!'}
+${includeEmojis ? '1️⃣ ' : '1. '}${businessGoal === 'farkındalık_artırma' ? 'Bilinçli tercihler yapın ve impact yaratın' : 'Hedeflerinize laser-focus ile odaklanın'}
+${includeEmojis ? '2️⃣ ' : '2. '}Sürekli gelişim için öğrenmeye devam edin - stagnation is death
+${includeEmojis ? '3️⃣ ' : '3. '}${tone === 'motivasyonel' ? 'Hayallerinizin peşinden gidin ve risk alın' : 'Planlı hareket edin ama flexible kalın'}
+
+${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz? Hangi tip içerikler daha çok işinize yarıyor?' : 'Deneyimlerinizi ve success story'lerinizi paylaşır mısınız?'} ${includeEmojis ? '👇💬' : 'Yorumlarda buluşalım!'}
 
 ${Array.from({length: hashtagCount}, (_, i) => 
   i === 0 ? `#${industry || 'lifestyle'}` :
   i === 1 ? '#motivasyon' :
   i === 2 ? '#başarı' :
-  i === 3 ? '#gelişim' : '#inspiration'
+  i === 3 ? '#gelişim' : 
+  i === 4 ? '#inspiration' :
+  i === 5 ? '#mindset' : '#growth'
 ).join(' ')}`,
         
-        twitter: `${includeEmojis ? '🔥 ' : ''}${prompt || `${industry || 'Teknoloji'} dünyasında yeni trend`}
+        twitter: `${includeEmojis ? '🔥 ' : ''}${prompt || `${industry || 'Teknoloji'} dünyasında game-changing trend`}
 
-2024'te ${industry || 'iş'} dünyasında dikkat edilmesi gereken ${tone === 'profesyonel' ? 'kritik' : 'önemli'} noktalar:
+2024'te ${industry || 'iş'} dünyasında dikkat edilmesi gereken ${tone === 'profesyonel' ? 'kritik ve strategic' : 'önemli ve actionable'} noktalar:
 
-${includeEmojis ? '1️⃣' : '1.'} ${businessGoal === 'satış_artırma' ? 'Müşteri odaklı yaklaşım' : 'AI destekli çözümler'}
-${includeEmojis ? '2️⃣' : '2.'} ${audience === 'b2b' ? 'B2B dijital dönüşüm' : 'Kişiselleştirilmiş deneyimler'}
-${includeEmojis ? '3️⃣' : '3.'} Sürdürülebilir büyüme stratejileri
+${includeEmojis ? '1️⃣' : '1.'} ${businessGoal === 'satış_artırma' ? 'Customer-centric approach ve retention focus' : 'AI-powered solutions ve automation'}
+${includeEmojis ? '2️⃣' : '2.'} ${audience === 'b2b' ? 'B2B digital transformation ve omnichannel' : 'Hyper-personalized experiences ve data-driven insights'}
+${includeEmojis ? '3️⃣' : '3.'} Sustainable growth strategies ve long-term thinking
 
-${tone === 'eğlenceli' ? 'Hangisini daha önce denediniz?' : 'Bu konudaki deneyimleriniz neler?'} ${includeEmojis ? '🚀' : ''}
+${tone === 'eğlenceli' ? 'Hangisini daha önce denediniz? Results nasıldı?' : 'Bu konudaki deneyimleriniz ve insights neler?'} ${includeEmojis ? '🚀💭' : ''}
 
 ${Array.from({length: Math.min(hashtagCount, 3)}, (_, i) => 
   i === 0 ? `#${industry || 'business'}` :
