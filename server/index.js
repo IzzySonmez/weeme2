@@ -616,6 +616,7 @@ ${includeEmojis ? '2️⃣ ' : '2. '}Sürekli gelişim için öğrenmeye devam e
 ${includeEmojis ? '3️⃣ ' : '3. '}${tone === 'motivasyonel' ? 'Hayallerinizin peşinden gidin ve risk alın' : 'Planlı hareket edin ama flexible kalın'}
 
 ${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz? Hangi tip içerikler daha çok işinize yarıyor?' : 'Deneyimlerinizi ve success story\'lerinizi paylaşır mısınız?'} ${includeEmojis ? \'👇💬' : \'Yorumlarda buluşalım!'}
+${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz? Hangi tip içerikler daha çok işinize yarıyor?' : 'Deneyimlerinizi ve success story\'lerinizi paylaşır mısınız?'} ${includeEmojis ? '👇💬' : 'Yorumlarda buluşalım!'}
 
 ${Array.from({length: hashtagCount}, (_, i) => 
   i === 0 ? `#${industry || 'lifestyle'}` :
