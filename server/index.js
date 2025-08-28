@@ -265,32 +265,61 @@ app.post("/api/seo-scan",
       
       // Try AI analysis first
       try {
-        const systemPrompt = `Sen profesyonel bir SEO uzmanısın. Verilen HTML içeriğini detaylı analiz edip SADECE JSON formatında yanıt ver.
+        const systemPrompt = `Sen dünya çapında tanınmış bir SEO uzmanısın. 15+ yıl deneyimin var. Verilen website'i derinlemesine analiz et.
+
+GÖREV: Bu website için kapsamlı SEO analizi yap ve SADECE JSON formatında yanıt ver.
+
+ANALİZ KRİTERLERİ:
+1. Teknik SEO (meta tags, headings, sitemap, robots.txt)
+2. İçerik kalitesi ve anahtar kelime optimizasyonu
+3. Sayfa hızı ve Core Web Vitals
+4. Mobil uyumluluk
+5. Güvenlik (SSL, HTTPS)
+6. Kullanıcı deneyimi faktörleri
+7. Sosyal medya entegrasyonu
+8. Structured data markup
+9. İç ve dış bağlantı yapısı
+10. Yerel SEO faktörleri (varsa)
 
 JSON FORMAT:
 {
-  "score": number (0-100),
-  "positives": ["Gerçekten mevcut olan pozitif özellikler"],
-  "negatives": ["Gerçekten eksik olan özellikler"],
-  "suggestions": ["Detaylı, uygulanabilir öneriler"],
+  "score": number (0-100, gerçekçi değerlendirme),
+  "positives": ["Tespit edilen güçlü yönler - minimum 3, maksimum 8"],
+  "negatives": ["Kritik eksiklikler ve sorunlar - minimum 2, maksimum 6"],
+  "suggestions": ["Öncelik sırasına göre detaylı, uygulanabilir öneriler - minimum 5, maksimum 10"],
   "reportData": {
     "metaTags": boolean,
     "headings": boolean,
     "images": boolean,
-    "performance": number,
+    "performance": number (0-100),
     "mobileOptimization": boolean,
     "sslCertificate": boolean,
-    "pageSpeed": number,
-    "keywords": ["gerçek anahtar kelimeler"]
+    "pageSpeed": number (0-100),
+    "keywords": ["tespit edilen anahtar kelimeler - minimum 3"],
+    "structuredData": boolean,
+    "socialMediaTags": boolean,
+    "internalLinks": number,
+    "contentLength": number,
+    "h1Count": number,
+    "imageAltTags": number
   }
-}`;
+}
 
-        const userPrompt = `URL: ${url}\n\nHTML İçeriği:\n${html.slice(0, 5000)}\n\nBu websiteyi analiz edip detaylı SEO önerileri ver.`;
+ÖNEMLİ: Sadece gerçekten tespit ettiğin özellikleri rapor et. Varsayımda bulunma.`;
+
+        const userPrompt = `WEBSITE ANALİZİ:
+URL: ${url}
+HTML İçerik Uzunluğu: ${html.length} karakter
+
+HTML İÇERİK (İlk 8000 karakter):
+${html.slice(0, 8000)}
+
+Bu website için kapsamlı SEO analizi yap. Gerçek verilere dayalı, uygulanabilir öneriler ver.`;
 
         const aiResponse = await callOpenAI([
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
-        ], { timeout: 25000 });
+        ], { timeout: 30000, max_tokens: 6000 });
 
         let cleanedResponse = aiResponse.trim();
         if (cleanedResponse.startsWith('```json')) {
@@ -299,9 +328,20 @@ JSON FORMAT:
 
         report = JSON.parse(cleanedResponse);
         
-        // Validate report structure
-        if (typeof report.score !== 'number' || !Array.isArray(report.positives)) {
+        // Validate and enhance report structure
+        if (typeof report.score !== 'number' || !Array.isArray(report.positives) || !Array.isArray(report.negatives)) {
           throw new Error('Invalid report structure');
+        }
+
+        // Ensure minimum data quality
+        if (report.positives.length < 2) {
+          report.positives.push("Website erişilebilir durumda ve temel HTML yapısı mevcut");
+        }
+        if (report.negatives.length < 1) {
+          report.negatives.push("Detaylı analiz için daha fazla veri gerekli");
+        }
+        if (report.suggestions.length < 3) {
+          report.suggestions.push("SEO performansını artırmak için düzenli analiz yapın");
         }
 
         console.log(`[SUCCESS] AI analysis completed for ${url}, score: ${report.score}`);
@@ -415,7 +455,7 @@ JSON FORMAT:
 app.post("/api/ai-content",
   aiContentLimit,
   async (req, res) => {
-    const { membershipType, platform, prompt, industry, audience, businessGoal, tone, includeEmojis, hashtagCount, targetLength } = req.body;
+    const { membershipType, platform, prompt, industry, audience, businessGoal, tone, includeEmojis, hashtagCount, targetLength, characterLimit } = req.body;
 
     if (membershipType !== "Advanced") {
       return res.status(403).json({ 
@@ -425,37 +465,129 @@ app.post("/api/ai-content",
     }
 
     try {
-      // Try AI generation
-      const systemPrompt = `Sen profesyonel bir sosyal medya içerik uzmanısın. ${platform} platformu için Türkçe içerik üret.
+      const systemPrompt = `Sen dünya çapında tanınmış bir sosyal medya stratejisti ve içerik uzmanısın. 10+ yıl deneyimin var.
 
-Parametreler:
-- Platform: ${platform}
-- Sektör: ${industry || 'genel'}
-- Hedef kitle: ${audience || 'genel'}
-- Ton: ${tone || 'profesyonel'}
-- İş hedefi: ${businessGoal || 'farkındalık artırma'}
-- Emoji kullan: ${includeEmojis ? 'evet' : 'hayır'}
-- Hashtag sayısı: ${hashtagCount || 3}
+PLATFORM: ${platform}
+UZMANLIKLARIN:
+- ${platform === 'linkedin' ? 'B2B içerik stratejisi, thought leadership, profesyonel networking' : ''}
+- ${platform === 'instagram' ? 'Görsel hikaye anlatımı, hashtag stratejisi, engagement artırma' : ''}
+- ${platform === 'twitter' ? 'Viral içerik, trend takibi, kısa ve etkili mesajlar' : ''}
+- ${platform === 'facebook' ? 'Topluluk yönetimi, uzun form içerik, organik reach' : ''}
+- Algoritma optimizasyonu
+- Audience engagement stratejileri
+- Content marketing ROI
+
+GÖREV: ${platform} için yüksek engagement alacak, profesyonel ve özgün içerik üret.
+
+İÇERİK KRİTERLERİ:
+- Platform algoritmasına uygun
+- Hedef kitleye özel
+- Eyleme teşvik edici
+- Değer katacak bilgi içeren
+- Özgün ve yaratıcı
+${characterLimit ? `- Maksimum ${characterLimit} karakter` : ''}
 ${targetLength ? `- Hedef uzunluk: ${targetLength} karakter` : ''}
 
-Lütfen bu parametrelere uygun, etkileşim odaklı bir içerik üret.`;
+PLATFORM ÖZELLİKLERİ:
+${platform === 'linkedin' ? '- Profesyonel ton, industry insights, networking odaklı' : ''}
+${platform === 'instagram' ? '- Görsel odaklı, hikaye anlatımı, lifestyle elements' : ''}
+${platform === 'twitter' ? '- Kısa ve öz, trend odaklı, conversation starter' : ''}
+${platform === 'facebook' ? '- Topluluk odaklı, discussion starter, longer form' : ''}
+
+SADECE İÇERİK METNINI DÖNDÜR. Ek açıklama yapma.`;
+
+      const userPrompt = `İÇERİK TALEBİ:
+Konu: ${prompt || 'Sektör hakkında değerli bilgi paylaş'}
+Sektör: ${industry || 'genel'}
+Hedef Kitle: ${audience || 'genel'}
+Ton: ${tone || 'profesyonel'}
+İş Hedefi: ${businessGoal || 'farkındalık artırma'}
+Emoji Kullan: ${includeEmojis ? 'evet' : 'hayır'}
+Hashtag Sayısı: ${hashtagCount || 3}
+
+Bu bilgilere göre ${platform} için yüksek engagement alacak özgün içerik üret.`;
 
       const content = await callOpenAI([
         { role: "system", content: systemPrompt },
-        { role: "user", content: prompt || 'Genel bir paylaşım içeriği üret' }
-      ]);
+        { role: "user", content: userPrompt }
+      ], { timeout: 25000, max_tokens: 2000 });
 
       res.json({ ok: true, content });
     } catch (error) {
+      console.log(`[INFO] AI content generation failed, using enhanced fallback: ${error.message}`);
       // Fallback content
       const platformTemplates = {
-        linkedin: `🚀 ${prompt || 'Dijital pazarlama stratejisi'}\n\nDijital pazarlama dünyasında sürekli değişen trendleri takip etmek kritik önemde. İşte dikkat etmeniz gereken 3 ana nokta:\n\n• Veri odaklı karar verme süreçleri\n• Müşteri deneyimi optimizasyonu\n• ROI ölçümü ve analiz\n\nSizin deneyimleriniz neler? Yorumlarda paylaşın! 💡\n\n#dijitalpazarlama #seo #marketing`,
+        linkedin: `${includeEmojis ? '🚀 ' : ''}${prompt || `${industry || 'Dijital'} sektöründe başarı için kritik stratejiler`}
+
+${industry || 'İş'} dünyasında sürekli değişen dinamikleri takip etmek başarının anahtarı. ${tone === 'profesyonel' ? 'Deneyimlerime dayanarak' : 'Gözlemlerime göre'} dikkat etmeniz gereken ana noktalar:
+
+${audience === 'b2b' ? '• Müşteri ihtiyaçlarını derinlemesine anlama' : '• Hedef kitlenizle güçlü bağ kurma'}
+• Veri odaklı karar verme süreçleri
+• Sürekli öğrenme ve adaptasyon
+• ${businessGoal === 'satış_artırma' ? 'Satış funnel optimizasyonu' : 'Marka değeri yaratma'}
+
+${tone === 'samimi' ? 'Sizin bu konudaki deneyimleriniz neler?' : 'Bu konudaki görüşlerinizi merak ediyorum.'} Yorumlarda paylaşalım! ${includeEmojis ? '💡' : ''}
+
+${Array.from({length: hashtagCount}, (_, i) => 
+  i === 0 ? `#${industry || 'business'}` :
+  i === 1 ? '#strateji' :
+  i === 2 ? '#başarı' : '#growth'
+).join(' ')}`,
         
-        instagram: `✨ ${prompt || 'SEO ipuçları'} ✨\n\nBugün sizlerle SEO dünyasından pratik ipuçları paylaşıyorum! 📈\n\n🎯 Anahtar kelime araştırması yaparken:\n• Uzun kuyruk kelimeleri unutmayın\n• Rakip analizi yapın\n• Kullanıcı niyetini anlayın\n\nHangi SEO aracını kullanıyorsunuz? 👇\n\n#seo #dijitalpazarlama #marketing #webdesign #googleranking`,
+        instagram: `${includeEmojis ? '✨ ' : ''}${prompt || `${industry || 'Yaşam'} tarzınızı değiştirecek ipuçları`}${includeEmojis ? ' ✨' : ''}
+
+${tone === 'eğlenceli' ? 'Bugün sizlerle süper pratik' : 'Bugün sizlerle değerli'} ${industry || 'yaşam'} ipuçları paylaşıyorum! ${includeEmojis ? '📈' : ''}
+
+${includeEmojis ? '🎯 ' : ''}${audience === 'genç_yetişkin' ? 'Genç profesyoneller' : 'Herkes'} için önemli noktalar:
+• ${businessGoal === 'farkındalık_artırma' ? 'Bilinçli tercihler yapın' : 'Hedeflerinize odaklanın'}
+• Sürekli gelişim için öğrenmeye devam edin
+• ${tone === 'motivasyonel' ? 'Hayallerinizin peşinden gidin' : 'Planlı hareket edin'}
+
+${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz?' : 'Deneyimlerinizi paylaşır mısınız?'} ${includeEmojis ? '👇' : 'Yorumlarda buluşalım!'}
+
+${Array.from({length: hashtagCount}, (_, i) => 
+  i === 0 ? `#${industry || 'lifestyle'}` :
+  i === 1 ? '#motivasyon' :
+  i === 2 ? '#başarı' :
+  i === 3 ? '#gelişim' : '#inspiration'
+).join(' ')}`,
         
-        twitter: `🔥 ${prompt || 'Dijital pazarlama trendi'}\n\n2024'te dikkat edilmesi gereken 3 trend:\n\n1️⃣ AI destekli içerik üretimi\n2️⃣ Voice search optimizasyonu  \n3️⃣ Video-first stratejiler\n\nHangisini daha önce denediniz? 🚀\n\n#marketing #AI #seo`,
+        twitter: `${includeEmojis ? '🔥 ' : ''}${prompt || `${industry || 'Teknoloji'} dünyasında yeni trend`}
+
+2024'te ${industry || 'iş'} dünyasında dikkat edilmesi gereken ${tone === 'profesyonel' ? 'kritik' : 'önemli'} noktalar:
+
+${includeEmojis ? '1️⃣' : '1.'} ${businessGoal === 'satış_artırma' ? 'Müşteri odaklı yaklaşım' : 'AI destekli çözümler'}
+${includeEmojis ? '2️⃣' : '2.'} ${audience === 'b2b' ? 'B2B dijital dönüşüm' : 'Kişiselleştirilmiş deneyimler'}
+${includeEmojis ? '3️⃣' : '3.'} Sürdürülebilir büyüme stratejileri
+
+${tone === 'eğlenceli' ? 'Hangisini daha önce denediniz?' : 'Bu konudaki deneyimleriniz neler?'} ${includeEmojis ? '🚀' : ''}
+
+${Array.from({length: Math.min(hashtagCount, 3)}, (_, i) => 
+  i === 0 ? `#${industry || 'business'}` :
+  i === 1 ? '#trend2024' :
+  '#innovation'
+).join(' ')}`,
         
-        facebook: `👋 Dijital pazarlama topluluğu!\n\n${prompt || 'SEO stratejileri'} konusunda deneyimlerinizi merak ediyorum.\n\nÖzellikle şu konularda:\n• Organik trafik artırma yöntemleri\n• İçerik pazarlama stratejileri\n• Sosyal medya entegrasyonu\n\nSizin en etkili bulduğunuz yöntem hangisi? Deneyimlerinizi paylaşır mısınız? 💬\n\n#dijitalpazarlama #seo #marketing #topluluk`
+        facebook: `${includeEmojis ? '👋 ' : 'Merhaba '}${industry || 'İş'} dünyası topluluğu!
+
+${prompt || `${industry || 'Sektör'} stratejileri`} konusunda ${tone === 'samimi' ? 'sizlerle sohbet etmek' : 'deneyimlerinizi öğrenmek'} istiyorum.
+
+Özellikle şu konularda merak ettiklerim:
+• ${businessGoal === 'satış_artırma' ? 'Satış artırma teknikleri' : 'Marka bilinirliği stratejileri'}
+• ${audience === 'b2b' ? 'B2B müşteri kazanma yöntemleri' : 'Müşteri sadakati oluşturma'}
+• ${industry === 'eticaret' ? 'E-ticaret optimizasyonu' : 'Dijital pazarlama entegrasyonu'}
+• Sürdürülebilir büyüme modelleri
+
+${tone === 'profesyonel' ? 'Sizin en etkili bulduğunuz yöntem hangisi?' : 'Hangi stratejiler sizin için işe yaradı?'} Deneyimlerinizi paylaşır mısınız? ${includeEmojis ? '💬' : ''}
+
+Bu konuları tartışmak ve birbirimizden öğrenmek için yorumlarda buluşalım!
+
+${Array.from({length: hashtagCount}, (_, i) => 
+  i === 0 ? `#${industry || 'business'}` :
+  i === 1 ? '#strateji' :
+  i === 2 ? '#topluluk' :
+  '#paylaşım'
+).join(' ')}`
       };
 
       const fallbackContent = platformTemplates[platform] || platformTemplates.linkedin;
@@ -473,7 +605,7 @@ Lütfen bu parametrelere uygun, etkileşim odaklı bir içerik üret.`;
 app.post("/api/seo-suggestions",
   suggestionsLimit,
   async (req, res) => {
-    const { membershipType, prompt, useReportBase, reportContext, websiteUrl, currentScore } = req.body;
+    const { membershipType, prompt, useReportBase } = req.body;
 
     if (membershipType !== "Pro" && membershipType !== "Advanced") {
       return res.status(403).json({ 
@@ -483,154 +615,39 @@ app.post("/api/seo-suggestions",
     }
 
     try {
-      const systemPrompt = `Sen dünya çapında tanınmış bir SEO danışmanısın. 20+ yıl deneyimin var ve Fortune 500 şirketlerine danışmanlık yapıyorsun.
-
-UZMANLIKLARIN:
-- Teknik SEO optimizasyonu
-- İçerik stratejisi ve anahtar kelime araştırması  
-- Core Web Vitals ve sayfa hızı optimizasyonu
-- Uluslararası SEO ve çok dilli siteler
-- E-ticaret SEO
-- Yerel SEO
-- SEO araçları (Google Search Console, SEMrush, Ahrefs)
-
-GÖREV: Kullanıcının sorusuna detaylı, uygulanabilir ve profesyonel yanıt ver.
-
-YANIT FORMATI (JSON):
-{
-  "quickWins": ["Hemen uygulanabilir 3-5 öneri"],
-  "issues": [
-    {
-      "title": "Sorun başlığı",
-      "why": "Neden önemli olduğu",
-      "how": ["Nasıl çözüleceği - adım adım"]
-    }
-  ],
-  "roadmap": {
-    "d30": ["30 günde yapılacaklar"],
-    "d60": ["60 günde yapılacaklar"], 
-    "d90": ["90 günde yapılacaklar"]
-  },
-  "notes": ["Ek notlar ve uyarılar"]
-}`;
-
-      let userPrompt = '';
-      
-      if (useReportBase && reportContext) {
-        userPrompt = `MEVCUT SEO RAPORU ANALİZİ:
-${reportContext}
-
-KULLANICI SORUSU: ${prompt || 'Bu rapor temelinde detaylı öneriler ver'}
-
-Bu raporu analiz ederek:
-1. En kritik sorunları öncelik sırasına koy
-2. Her sorun için detaylı çözüm yolu ver
-3. Hızlı kazanımları belirle
-4. 30-60-90 günlük eylem planı oluştur
-5. Hangi araçları kullanacağını belirt
-6. Nasıl ölçüm yapacağını açıkla`;
-      } else {
-        userPrompt = `SEO DANIŞMANLIK TALEBİ:
-${prompt || 'Genel SEO stratejisi öner'}
-
-${websiteUrl ? `Website: ${websiteUrl}` : ''}
-${currentScore ? `Mevcut SEO Skoru: ${currentScore}/100` : ''}
-
-Bu talep için:
-1. Kapsamlı analiz ve öneriler ver
-2. Uygulanabilir adımları detaylandır
-3. Beklenen sonuçları açıkla
-4. Gerekli araçları ve kaynakları belirt
-5. Zaman çizelgesi oluştur`;
-      }
-
+      // Try AI suggestions
       const suggestions = await callOpenAI([
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ], { timeout: 30000, max_tokens: 8000 });
+        { role: "system", content: "Sen SEO uzmanısın. JSON formatında öneriler ver." },
+        { role: "user", content: prompt || "Genel SEO önerileri ver" }
+      ]);
 
       const parsed = JSON.parse(suggestions);
-      
-      // Validate and enhance response
-      if (!parsed.quickWins || !Array.isArray(parsed.quickWins)) {
-        parsed.quickWins = ["SEO analizi yapın ve eksiklikleri tespit edin"];
-      }
-      if (!parsed.issues || !Array.isArray(parsed.issues)) {
-        parsed.issues = [{ title: "Genel SEO İyileştirmesi", why: "Daha iyi sıralama için", how: ["Düzenli analiz yapın"] }];
-      }
-      
       res.json({ ok: true, data: parsed });
     } catch (error) {
-      console.log(`[INFO] AI suggestions failed, using enhanced fallback: ${error.message}`);
       // Fallback suggestions
       const fallbackData = {
         quickWins: [
-          "Meta title ve description'ları optimize edin (title: 50-60 karakter, description: 150-160 karakter)",
-          "H1 başlık yapısını düzenleyin - her sayfada tek, benzersiz H1 kullanın",
-          "XML sitemap oluşturun ve Google Search Console'a gönderin",
-          "Görsellere alt etiketleri ekleyin ve dosya boyutlarını optimize edin",
-          "Sayfa yükleme hızını artırmak için CSS/JS dosyalarını minimize edin"
+          "Meta description optimize edin (150-160 karakter)",
+          "H1 başlık yapısını düzenleyin",
+          "XML sitemap oluşturun"
         ],
         issues: [
           {
-            title: "Meta etiketleri eksik veya optimize edilmemiş",
-            why: "Arama motorları sayfalarınızın içeriğini tam olarak anlayamıyor ve SERP'lerde etkili görünmüyor",
+            title: "Temel SEO eksiklikleri",
+            why: "Arama motorları sitenizi tam olarak anlayamıyor",
             how: [
-              "Her sayfa için benzersiz meta title yazın (50-60 karakter)",
-              "Çekici meta description'lar oluşturun (150-160 karakter)",
-              "Title'da ana anahtar kelimeyi başa yerleştirin",
-              "Description'da call-to-action kullanın"
-            ]
-          },
-          {
-            title: "Teknik SEO altyapısı eksiklikleri",
-            why: "Arama motorları sitenizi etkili şekilde tarayamıyor ve indeksleyemiyor",
-            how: [
-              "XML sitemap oluşturun ve güncel tutun",
-              "Robots.txt dosyasını optimize edin",
-              "Canonical etiketleri ekleyin",
-              "404 sayfalarını düzeltin",
-              "Site hızını artırın (Core Web Vitals)"
-            ]
-          },
-          {
-            title: "İçerik ve anahtar kelime stratejisi eksikliği",
-            why: "Hedef kitlenizin aradığı terimler için optimize edilmemiş içerik",
-            how: [
-              "Anahtar kelime araştırması yapın",
-              "Uzun kuyruk anahtar kelimeleri hedefleyin",
-              "İçerik kalitesini artırın (minimum 300 kelime)",
-              "İç bağlantı stratejisi geliştirin",
-              "Düzenli içerik güncellemeleri yapın"
+              "Meta etiketleri ekleyin",
+              "Başlık hiyerarşisi kurun",
+              "İç bağlantıları güçlendirin"
             ]
           }
         ],
         roadmap: {
-          d30: [
-            "Tüm sayfalar için meta title/description optimize et",
-            "XML sitemap oluştur ve Search Console'a gönder",
-            "Kritik 404 hatalarını düzelt",
-            "Sayfa hızı analizi yap ve hızlı düzeltmeler uygula"
-          ],
-          d60: [
-            "Anahtar kelime araştırması ve içerik stratejisi oluştur",
-            "İç bağlantı yapısını güçlendir",
-            "Structured data markup ekle",
-            "Mobil uyumluluk sorunlarını çöz"
-          ],
-          d90: [
-            "Düzenli içerik üretim takvimi oluştur",
-            "Backlink stratejisi geliştir",
-            "Yerel SEO optimizasyonu (eğer gerekiyorsa)",
-            "Performans takibi ve raporlama sistemi kur"
-          ]
+          d30: ["Meta etiketleri optimize et"],
+          d60: ["İçerik stratejisi kur"],
+          d90: ["Performans takibi yap"]
         },
-        notes: [
-          "Bu öneriler genel SEO best practice'leri temel alır",
-          "Sonuçları görmek için 3-6 ay sabırlı olun",
-          "Google Search Console ve Google Analytics kurulumunu unutmayın",
-          "Rakip analizi yaparak stratejinizi güçlendirin"
-        ]
+        notes: ["Bu öneriler genel SEO best practice'leri temel alır"]
       };
 
       res.json({ ok: true, data: fallbackData });
