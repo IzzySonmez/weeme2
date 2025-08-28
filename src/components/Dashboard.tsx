@@ -184,6 +184,208 @@ const InstallationPanel: React.FC<{
   );
 };
 
+const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
+  const { user } = useAuth();
+  const [reports, setReports] = useState<SEOReport[]>([]);
+  const [trackingCodes, setTrackingCodes] = useState<TrackingCode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [newWebsite, setNewWebsite] = useState('');
+  const [scanFreq, setScanFreq] = useState<ScanFrequency>('weekly');
+  const [isScanning, setIsScanning] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // Load tracking codes and reports from localStorage
+      const savedCodes = localStorage.getItem(`trackingCodes_${user.id}`);
+      const savedReports = localStorage.getItem(`seoReports_${user.id}`);
+      
+      if (savedCodes) {
+        setTrackingCodes(JSON.parse(savedCodes));
+      }
+      if (savedReports) {
+        setReports(JSON.parse(savedReports));
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddWebsite = async () => {
+    if (!newWebsite.trim() || !user) return;
+
+    const normalizedUrl = normalizeUrl(newWebsite.trim());
+    const newCode: TrackingCode = {
+      id: Date.now().toString(),
+      userId: user.id,
+      websiteUrl: normalizedUrl,
+      code: `weeme-${user.id}-${Date.now()}`,
+      isActive: true,
+      scanFrequency: scanFreq,
+      lastScan: new Date().toISOString(),
+      nextScan: getNextScanDate(scanFreq)
+    };
+
+    const updatedCodes = [...trackingCodes, newCode];
+    setTrackingCodes(updatedCodes);
+    localStorage.setItem(`trackingCodes_${user.id}`, JSON.stringify(updatedCodes));
+    setNewWebsite('');
+  };
+
+  const handleScanNow = async (websiteUrl: string) => {
+    if (!user) return;
+    
+    setIsScanning(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/seo-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: websiteUrl, userId: user.id })
+      });
+
+      if (response.ok) {
+        const newReport = await response.json();
+        const updatedReports = [newReport, ...reports];
+        setReports(updatedReports);
+        localStorage.setItem(`seoReports_${user.id}`, JSON.stringify(updatedReports));
+      }
+    } catch (error) {
+      console.error('Scan error:', error);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">SEO Dashboard</h1>
+        <p className="text-gray-600">Sitelerinizi takip edin ve SEO performansınızı artırın</p>
+      </div>
+
+      {/* Add Website Section */}
+      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Globe className="h-5 w-5 text-purple-600" />
+          Site Doğrulama ve Takip Kodu
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          <input
+            type="url"
+            value={newWebsite}
+            onChange={(e) => setNewWebsite(e.target.value)}
+            placeholder="https://example.com"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          <select
+            value={scanFreq}
+            onChange={(e) => setScanFreq(e.target.value as ScanFrequency)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="weekly">Haftalık Tarama</option>
+            <option value="biweekly">İki Haftada Bir</option>
+            <option value="monthly">Aylık Tarama</option>
+          </select>
+          <button
+            onClick={handleAddWebsite}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Site Ekle
+          </button>
+        </div>
+      </div>
+
+      {/* Tracking Codes */}
+      {trackingCodes.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FileCode2 className="h-5 w-5 text-purple-600" />
+            Takip Kodları
+          </h3>
+          
+          {trackingCodes.map((code) => (
+            <div key={code.id} className="border rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="font-medium text-gray-900">{code.websiteUrl}</div>
+                  <div className="text-sm text-gray-500">
+                    Son tarama: {new Date(code.lastScan).toLocaleString('tr-TR')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleScanNow(code.websiteUrl)}
+                  disabled={isScanning}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isScanning ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlayCircle className="h-4 w-4" />
+                  )}
+                  Şimdi Tara
+                </button>
+              </div>
+              
+              <InstallationPanel trackingCode={code} user={user} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* SEO Reports */}
+      {reports.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-purple-600" />
+            SEO Raporları
+          </h3>
+          
+          <div className="space-y-4">
+            {reports.map((report) => (
+              <div key={report.id}>
+                <CompactReportRow
+                  report={report}
+                  expanded={expandedReport === report.id}
+                  onToggle={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
+                />
+                {expandedReport === report.id && (
+                  <AISummaryCard report={report} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {reports.length === 0 && trackingCodes.length === 0 && (
+        <div className="text-center py-12">
+          <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz site eklenmemiş</h3>
+          <p className="text-gray-600">İlk sitenizi ekleyerek SEO analizine başlayın</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default Dashboard;
 const CompactReportRow: React.FC<{
   report: SEOReport;
