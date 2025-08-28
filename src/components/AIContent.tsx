@@ -179,7 +179,7 @@ const AIContent: React.FC = () => {
 
   const callOpenAI = async (): Promise<string> => {
     try {
-      const base = import.meta.env?.VITE_API_BASE || 'http://localhost:8787';
+      const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
       const url = `${base}/api/ai-content`;
       
       console.log('[DEBUG] Making AI content API call to:', url);
@@ -209,7 +209,7 @@ const AIContent: React.FC = () => {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error('[ERROR] AI Content API error:', resp.status, errorText);
-        return generateFallback();
+        throw new Error(`API Error: ${resp.status}`);
       }
 
       const json = await resp.json();
@@ -217,7 +217,7 @@ const AIContent: React.FC = () => {
       return json?.content || 'İçerik üretilemedi.';
     } catch (error) {
       console.error('[ERROR] AI Content request failed:', error);
-      throw error;
+      return generateFallback();
     }
   };
 

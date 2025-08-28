@@ -227,7 +227,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   const callOpenAI = async (): Promise<AIStruct> => {
     try {
-      const base = import.meta.env?.VITE_API_BASE || 'http://localhost:8787';
+      const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
       const url = `${base}/api/seo-suggestions`;
       
       console.log('[DEBUG] Making suggestions API call to:', url);
@@ -252,7 +252,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error('[ERROR] Suggestions API error:', resp.status, errorText);
-        return offlineGenerate();
+        throw new Error(`API Error: ${resp.status}`);
       }
 
       const json = await resp.json();
@@ -266,7 +266,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
       }
 
       return data as AIStruct;
-    } catch {
+    } catch (error) {
       console.error('[ERROR] Suggestions request failed, using fallback');
       return offlineGenerate();
     }
