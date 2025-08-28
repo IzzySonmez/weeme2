@@ -153,7 +153,7 @@ const handleValidationErrors = (req, res, next) => {
 const callOpenAI = async (messages, options = {}) => {
   const {
     model = "gpt-4o-mini",
-    temperature = 0.1,
+    temperature = 0.3,
     max_tokens = 4000,
     timeout = 30000
   } = options;
@@ -267,26 +267,26 @@ app.post("/api/seo-scan",
       try {
         const systemPrompt = `Sen dünya çapında tanınmış bir SEO uzmanısın. 15+ yıl deneyimin var. Verilen website'i derinlemesine analiz et.
 
-GÖREV: Bu website için kapsamlı SEO analizi yap ve SADECE JSON formatında yanıt ver.
+GÖREV: Bu website için kapsamlı SEO analizi yap ve SADECE JSON formatında yanıt ver. Gerçek verilere dayalı, detaylı ve uygulanabilir analiz yap.
 
 ANALİZ KRİTERLERİ:
-1. Teknik SEO (meta tags, headings, sitemap, robots.txt)
-2. İçerik kalitesi ve anahtar kelime optimizasyonu
-3. Sayfa hızı ve Core Web Vitals
-4. Mobil uyumluluk
-5. Güvenlik (SSL, HTTPS)
-6. Kullanıcı deneyimi faktörleri
-7. Sosyal medya entegrasyonu
-8. Structured data markup
-9. İç ve dış bağlantı yapısı
-10. Yerel SEO faktörleri (varsa)
+1. TEKNIK SEO: Meta tags, headings yapısı, sitemap varlığı, robots.txt kontrolü
+2. İÇERİK KALİTESİ: Anahtar kelime yoğunluğu, başlık optimizasyonu, içerik uzunluğu
+3. PERFORMANS: Sayfa hızı, Core Web Vitals, görsel optimizasyonu
+4. MOBİL UYUMLULUK: Responsive tasarım, mobil kullanıcı deneyimi
+5. GÜVENLİK: SSL sertifikası, HTTPS kullanımı, güvenlik başlıkları
+6. KULLANICI DENEYİMİ: Navigasyon, sayfa yapısı, erişilebilirlik
+7. SOSYAL MEDYA: Open Graph, Twitter Card, sosyal sinyal optimizasyonu
+8. YAPISAL VERİ: Schema markup, rich snippets potansiyeli
+9. BAĞLANTI YAPISI: İç bağlantı stratejisi, dış bağlantı kalitesi
+10. YEREL SEO: Google My Business, yerel arama optimizasyonu (varsa)
 
 JSON FORMAT:
 {
-  "score": number (0-100, gerçekçi değerlendirme),
-  "positives": ["Tespit edilen güçlü yönler - minimum 3, maksimum 8"],
-  "negatives": ["Kritik eksiklikler ve sorunlar - minimum 2, maksimum 6"],
-  "suggestions": ["Öncelik sırasına göre detaylı, uygulanabilir öneriler - minimum 5, maksimum 10"],
+  "score": number (0-100, gerçekçi ve objektif değerlendirme),
+  "positives": ["Tespit edilen güçlü yönler - detaylı açıklamalarla, minimum 4, maksimum 8"],
+  "negatives": ["Kritik eksiklikler ve sorunlar - spesifik ve çözüm odaklı, minimum 3, maksimum 6"],
+  "suggestions": ["Öncelik sırasına göre DETAYLI, UYGULANABILIIR öneriler - nasıl yapılacağı dahil, minimum 6, maksimum 12"],
   "reportData": {
     "metaTags": boolean,
     "headings": boolean,
@@ -305,21 +305,33 @@ JSON FORMAT:
   }
 }
 
-ÖNEMLİ: Sadece gerçekten tespit ettiğin özellikleri rapor et. Varsayımda bulunma.`;
+ÖNEMLİ KURALLAR:
+1. Sadece gerçekten tespit ettiğin özellikleri rapor et - varsayımda bulunma
+2. Her öneriyi NASIL uygulanacağını açıklayarak ver
+3. Skorlamada gerçekçi ol - çoğu site 60-85 arası skor alır
+4. Teknik terimler kullan ama açıklayarak
+5. Öncelik sırasına göre öneriler ver (en kritik önce)`;
 
         const userPrompt = `WEBSITE ANALİZİ:
 URL: ${url}
 HTML İçerik Uzunluğu: ${html.length} karakter
 
+DETAYLI ANALİZ TALEBİ:
+- Bu site için kapsamlı SEO denetimi yap
+- Eksiklikleri öncelik sırasına göre listele
+- Her eksiklik için çözüm yolu öner
+- Hızlı kazanım fırsatlarını belirt
+- Rekabet avantajı sağlayacak önerileri dahil et
+
 HTML İÇERİK (İlk 8000 karakter):
 ${html.slice(0, 8000)}
 
-Bu website için kapsamlı SEO analizi yap. Gerçek verilere dayalı, uygulanabilir öneriler ver.`;
+BEKLENEN ÇIKTI: Yukarıdaki JSON formatında, detaylı ve uygulanabilir SEO analizi.`;
 
         const aiResponse = await callOpenAI([
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
-        ], { timeout: 30000, max_tokens: 6000 });
+        ], { timeout: 45000, max_tokens: 8000, temperature: 0.2 });
 
         let cleanedResponse = aiResponse.trim();
         if (cleanedResponse.startsWith('```json')) {
@@ -615,39 +627,118 @@ app.post("/api/seo-suggestions",
     }
 
     try {
-      // Try AI suggestions
+      const systemPrompt = `Sen Fortune 500 şirketlerine danışmanlık yapan, 20+ yıl deneyimli bir SEO stratejistisin. 
+
+UZMANLIKLARIN:
+- Teknik SEO optimizasyonu
+- İçerik stratejisi ve anahtar kelime araştırması  
+- E-A-T (Expertise, Authoritativeness, Trustworthiness) optimizasyonu
+- Core Web Vitals ve sayfa deneyimi optimizasyonu
+- Uluslararası SEO ve çok dilli site stratejileri
+- Local SEO ve Google My Business optimizasyonu
+- Schema markup ve structured data implementasyonu
+- Link building ve dijital PR stratejileri
+
+GÖREV: Verilen SEO sorusu/problemi için detaylı, uygulanabilir çözümler üret.
+
+ÇIKTI FORMATI (JSON):
+{
+  "quickWins": ["Hemen uygulanabilir, hızlı sonuç verecek öneriler - minimum 4, maksimum 8"],
+  "issues": [
+    {
+      "title": "Sorun başlığı",
+      "why": "Bu sorun neden kritik - SEO etkisi",
+      "how": ["Adım adım çözüm yöntemi", "Kullanılacak araçlar", "Ölçüm metrikleri"]
+    }
+  ],
+  "roadmap": {
+    "d30": ["İlk 30 günde yapılacaklar - öncelikli aksiyonlar"],
+    "d60": ["30-60 gün arası - orta vadeli stratejiler"], 
+    "d90": ["60-90 gün arası - uzun vadeli optimizasyonlar"]
+  },
+  "notes": ["Önemli notlar, uyarılar ve ek öneriler"]
+}
+
+ÖNEMLİ: Her öneri için NEDEN önemli olduğunu ve NASIL uygulanacağını detaylı açıkla.`;
+
+      const userPrompt = prompt || "Genel SEO iyileştirme stratejisi öner";
+      
       const suggestions = await callOpenAI([
-        { role: "system", content: "Sen SEO uzmanısın. JSON formatında öneriler ver." },
-        { role: "user", content: prompt || "Genel SEO önerileri ver" }
-      ]);
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ], { timeout: 45000, max_tokens: 6000, temperature: 0.3 });
 
       const parsed = JSON.parse(suggestions);
       res.json({ ok: true, data: parsed });
     } catch (error) {
+      console.log(`[INFO] AI suggestions failed, using enhanced fallback: ${error.message}`);
       // Fallback suggestions
       const fallbackData = {
         quickWins: [
-          "Meta description optimize edin (150-160 karakter)",
-          "H1 başlık yapısını düzenleyin",
-          "XML sitemap oluşturun"
+          "Meta description'ları 150-160 karakter arasında optimize edin - CTR artışı sağlar",
+          "H1 başlık yapısını düzenleyin - her sayfada tek, benzersiz H1 kullanın",
+          "XML sitemap oluşturun ve Search Console'a gönderin - indeksleme hızını artırır",
+          "Görsellere alt text ekleyin - hem erişilebilirlik hem görsel SEO için kritik",
+          "Sayfa yükleme hızını optimize edin - Core Web Vitals skorunu iyileştirin"
         ],
         issues: [
           {
-            title: "Temel SEO eksiklikleri",
-            why: "Arama motorları sitenizi tam olarak anlayamıyor",
+            title: "Meta etiketleri ve başlık yapısı eksiklikleri",
+            why: "Arama motorları sayfa içeriğini tam olarak anlayamıyor, SERP görünürlüğü düşük",
             how: [
-              "Meta etiketleri ekleyin",
-              "Başlık hiyerarşisi kurun",
-              "İç bağlantıları güçlendirin"
+              "Her sayfa için benzersiz meta title (50-60 karakter) yazın",
+              "Meta description'ları hedef anahtar kelimelerle optimize edin",
+              "H1-H6 başlık hiyerarşisini mantıklı şekilde kurun",
+              "Screaming Frog ile eksik meta etiketleri tespit edin"
+            ]
+          },
+          {
+            title: "Teknik SEO altyapı sorunları", 
+            why: "Arama motoru botları siteyi verimli tarayamıyor, indeksleme sorunları yaşanıyor",
+            how: [
+              "XML sitemap oluşturun ve düzenli güncelleyin",
+              "Robots.txt dosyasını optimize edin",
+              "Internal linking stratejisi geliştirin",
+              "Google Search Console'da crawl hatalarını düzeltin"
+            ]
+          },
+          {
+            title: "Sayfa hızı ve kullanıcı deneyimi",
+            why: "Yavaş yüklenen sayfalar hem kullanıcı deneyimini hem de sıralamayı olumsuz etkiliyor",
+            how: [
+              "PageSpeed Insights ile performans analizi yapın",
+              "Görselleri WebP formatına çevirin ve sıkıştırın",
+              "CSS/JS dosyalarını minify edin",
+              "CDN kullanımını değerlendirin"
             ]
           }
         ],
         roadmap: {
-          d30: ["Meta etiketleri optimize et"],
-          d60: ["İçerik stratejisi kur"],
-          d90: ["Performans takibi yap"]
+          d30: [
+            "Tüm sayfalar için meta title/description optimizasyonu",
+            "XML sitemap oluşturma ve Search Console'a gönderme", 
+            "Kritik sayfalarda H1 yapısını düzenleme",
+            "Google Analytics ve Search Console kurulumu"
+          ],
+          d60: [
+            "İçerik stratejisi geliştirme ve anahtar kelime araştırması",
+            "Internal linking yapısını güçlendirme",
+            "Sayfa hızı optimizasyonu (görseller, CSS/JS)",
+            "Schema markup implementasyonu"
+          ],
+          d90: [
+            "Backlink stratejisi ve dijital PR çalışmaları",
+            "İçerik takvimi oluşturma ve düzenli yayın planı",
+            "Rekabet analizi ve gap analysis",
+            "Performans takibi ve raporlama sisteminin kurulması"
+          ]
         },
-        notes: ["Bu öneriler genel SEO best practice'leri temel alır"]
+        notes: [
+          "Bu öneriler genel SEO best practice'leri temel alır",
+          "Her değişiklik sonrası 2-4 hafta bekleyip sonuçları ölçün",
+          "Google Search Console'u düzenli takip edin",
+          "SEO bir maraton, hızlı sonuç beklemeyin - sabırlı olun"
+        ]
       };
 
       res.json({ ok: true, data: fallbackData });
