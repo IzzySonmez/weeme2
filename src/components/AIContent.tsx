@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/database';
 import type { AIContent as AIContentType } from '../types';
 import {
   Sparkles,
@@ -142,14 +143,31 @@ const AIContent: React.FC = () => {
   const disabled = user?.membershipType !== 'Advanced';
 
   useEffect(() => {
-    const saved = localStorage.getItem(`aiContent_${user?.id}`);
-    if (saved) setContentHistory(JSON.parse(saved));
+    if (user?.id) {
+      loadAIContentHistory();
+    }
   }, [user?.id]);
 
+  const loadAIContentHistory = async () => {
+    if (!user?.id) return;
+    try {
+      const contents = await db.getAIContent(user.id);
+      setContentHistory(contents);
+    } catch (error) {
+      console.error('Failed to load AI content history:', error);
+      // Fallback to localStorage
+      const saved = localStorage.getItem(`aiContent_${user.id}`);
+      if (saved) setContentHistory(JSON.parse(saved));
+    }
+  };
   const saveHistory = (item: AIContentType) => {
     const updated = [item, ...contentHistory].slice(0, 100);
     setContentHistory(updated);
-    if (user) localStorage.setItem(`aiContent_${user.id}`, JSON.stringify(updated));
+    // Save to database
+    if (user) {
+      db.saveAIContent(item);
+      localStorage.setItem(`aiContent_${user.id}`, JSON.stringify(updated));
+    }
   };
 
   const clearHistory = () => {

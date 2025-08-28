@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { db } from '../lib/database';
 import {
   migrateStorage,
   getUserIndex,
@@ -74,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const persistAndSet = (u: User) => {
     saveUserById(toPersisted(u));
     setCurrentSessionUserId(u.id);
+    // Also save to database (Supabase if available)
+    db.saveUser(u);
     setUser(u);
   };
 

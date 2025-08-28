@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/database';
 import type { SEOReport } from '../types';
 import {
   Globe,
@@ -203,18 +204,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Load tracking codes and reports from localStorage
-      const savedCodes = localStorage.getItem(`trackingCodes_${user.id}`);
-      const savedReports = localStorage.getItem(`seoReports_${user.id}`);
+      // Load from database (hybrid localStorage + Supabase)
+      const [codes, reports] = await Promise.all([
+        db.getTrackingCodes(user.id),
+        db.getReports(user.id)
+      ]);
       
-      if (savedCodes) {
-        setTrackingCodes(JSON.parse(savedCodes));
-      }
-      if (savedReports) {
-        setReports(JSON.parse(savedReports));
-      }
+      setTrackingCodes(codes);
+      setReports(reports);
     } catch (error) {
       console.error('Error loading data:', error);
+      // Fallback to localStorage if database fails
+      const savedCodes = localStorage.getItem(`trackingCodes_${user.id}`);
+      const savedReports = localStorage.getItem(`reports_${user.id}`);
+      
+      if (savedCodes) setTrackingCodes(JSON.parse(savedCodes));
+      if (savedReports) setReports(JSON.parse(savedReports));
     } finally {
       setLoading(false);
     }
@@ -237,7 +242,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
     const updatedCodes = [...trackingCodes, newCode];
     setTrackingCodes(updatedCodes);
-    localStorage.setItem(`trackingCodes_${user.id}`, JSON.stringify(updatedCodes));
+    // Save to database
+    await db.saveTrackingCode(newCode);
     setNewWebsite('');
   };
 
@@ -289,7 +295,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
           
           const updatedReports = [newReport, ...reports];
           setReports(updatedReports);
-          localStorage.setItem(`reports_${user.id}`, JSON.stringify(updatedReports));
+          // Save to database
+          await db.saveReport(newReport);
           
           // Deduct credit for Free users
           if (user.membershipType === 'Free') {
@@ -324,9 +331,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
   const handleRemoveWebsite = (codeId: string) => {
     const updatedCodes = trackingCodes.filter(code => code.id !== codeId);
     setTrackingCodes(updatedCodes);
-    if (user) {
-      localStorage.setItem(`trackingCode_${user.id}`, JSON.stringify(updatedCodes));
-    }
+    // Delete from database
+    db.deleteTrackingCode(codeId);
   };
 
   const loadReports = () => {
