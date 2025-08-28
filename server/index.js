@@ -92,21 +92,49 @@ async function callOpenAI(messages, maxTokens = 2000) {
 // Site içeriğini fetch et
 async function fetchSiteContent(url) {
   try {
+    // URL validation ve normalization
+    let normalizedUrl;
+    try {
+      // URL'i normalize et
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        normalizedUrl = `https://${url}`;
+      } else {
+        normalizedUrl = url;
+      }
+      
+      // URL'in geçerli olduğunu kontrol et
+      const urlObj = new URL(normalizedUrl);
+      if (!urlObj.hostname || urlObj.hostname.length < 3) {
+        throw new Error('Invalid hostname');
+      }
+    } catch (urlError) {
+      console.error('[ERROR] Invalid URL format:', url, urlError.message);
+      return null;
+    }
+    
+    console.log('[INFO] Fetching content from:', normalizedUrl);
+    
     const response = await fetch(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; weeme-ai-bot/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; weeme-ai-bot/1.0)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive'
       }
     });
     
     if (!response.ok) {
+      console.error('[ERROR] HTTP error:', response.status, response.statusText);
       return null;
     }
     
     const html = await response.text();
+    console.log('[SUCCESS] Content fetched, length:', html.length);
     return html.substring(0, 50000); // İlk 50k karakter
   } catch (error) {
-    console.error('[ERROR] Failed to fetch site:', error.message);
+    console.error('[ERROR] Failed to fetch site:', normalizedUrl, error.message);
     return null;
   }
 }
@@ -176,12 +204,29 @@ app.post('/api/seo-scan', async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  console.log(`[INFO] Starting SEO scan for: ${url}`);
+  // URL validation
+  let normalizedUrl;
+  try {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      normalizedUrl = `https://${url}`;
+    } else {
+      normalizedUrl = url;
+    }
+    
+    const urlObj = new URL(normalizedUrl);
+    if (!urlObj.hostname || urlObj.hostname.length < 3) {
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
+  } catch (urlError) {
+    console.error('[ERROR] URL validation failed:', url, urlError.message);
+    return res.status(400).json({ error: 'Invalid URL format' });
+  }
+  console.log(`[INFO] Starting SEO scan for: ${normalizedUrl}`);
 
   try {
     // 1. Site içeriğini fetch et
-    const html = await fetchSiteContent(url);
-    const analysis = analyzeHTML(html, url);
+    const html = await fetchSiteContent(normalizedUrl);
+    const analysis = analyzeHTML(html, normalizedUrl);
     
     console.log('[INFO] HTML analysis completed:', {
       hasTitle: !!analysis.title,
@@ -193,12 +238,12 @@ app.post('/api/seo-scan', async (req, res) => {
 
     // 2. OpenAI ile detaylı analiz
     let aiAnalysis = null;
-    if (OPENAI_KEY) {
+    if (OPENAI_KEY && OPENAI_KEY.startsWith('sk-') && !OPENAI_KEY.includes('your-actual-openai-api-key-here')) {
       const prompt = `Sen 15+ yıl deneyimli bir SEO uzmanısın. Google'da çalışmış, Fortune 500 şirketlerine danışmanlık yapmışsın.
 
 GÖREV: Bu web sitesini 2024 SEO standartlarına göre analiz et.
 
-URL: ${url}
+URL: ${normalizedUrl}
 HTML İçerik: ${html ? html.substring(0, 8000) : 'İçerik alınamadı'}
 
 ANALİZ VERİLERİ:
@@ -245,8 +290,11 @@ JSON formatında dön:
           console.log('[SUCCESS] AI analysis completed');
         } catch (parseError) {
           console.error('[ERROR] Failed to parse AI response:', parseError.message);
+          console.error('[ERROR] AI response was:', aiResponse.substring(0, 500));
         }
       }
+    } else {
+      console.log('[INFO] OpenAI API key not available or invalid, using fallback analysis');
     }
 
     // 3. Fallback analizi (AI çalışmazsa)
@@ -353,14 +401,15 @@ JSON formatında dön:
       }
     };
 
-    console.log(`[SUCCESS] SEO scan completed for ${url} - Score: ${report.score}`);
+    console.log(`[SUCCESS] SEO scan completed for ${normalizedUrl} - Score: ${report.score}`);
     res.json({ ok: true, report });
 
   } catch (error) {
-    console.error('[ERROR] SEO scan failed:', error);
+    console.error('[ERROR] SEO scan failed for', normalizedUrl, ':', error.name, error.message);
     res.status(500).json({ 
       error: 'Scan failed',
-      message: error.message 
+      message: error.message,
+      url: normalizedUrl
     });
   }
 });
