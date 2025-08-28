@@ -588,7 +588,7 @@ ${targetLength ? `Hedef Uzunluk: ${targetLength} karakter` : ''}
 
 ${industry || 'İş'} dünyasında sürekli değişen dinamikleri takip etmek başarının anahtarı. ${tone === 'profesyonel' ? '15+ yıllık deneyimime dayanarak' : 'Gözlemlerime göre'} dikkat etmeniz gereken ana noktalar:
 
-${audience === 'b2b' ? '🔍 Müşteri ihtiyaçlarını derinlemesine anlama ve pain point'leri çözme' : '🤝 Hedef kitlenizle güçlü bağ kurma ve trust building'}
+${audience === 'b2b' ? '🔍 Müşteri ihtiyaçlarını derinlemesine anlama ve pain point\'leri çözme' : \'🤝 Hedef kitlenizle güçlü bağ kurma ve trust building'}
 📊 Veri odaklı karar verme süreçleri ve KPI takibi
 🎓 Sürekli öğrenme ve market trendlerine adaptasyon
 ${businessGoal === 'satış_artırma' ? '💰 Satış funnel optimizasyonu ve conversion artırma' : '🏆 Marka değeri yaratma ve thought leadership'}
@@ -615,7 +615,7 @@ ${includeEmojis ? '1️⃣ ' : '1. '}${businessGoal === 'farkındalık_artırma'
 ${includeEmojis ? '2️⃣ ' : '2. '}Sürekli gelişim için öğrenmeye devam edin - stagnation is death
 ${includeEmojis ? '3️⃣ ' : '3. '}${tone === 'motivasyonel' ? 'Hayallerinizin peşinden gidin ve risk alın' : 'Planlı hareket edin ama flexible kalın'}
 
-${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz? Hangi tip içerikler daha çok işinize yarıyor?' : 'Deneyimlerinizi ve success story'lerinizi paylaşır mısınız?'} ${includeEmojis ? '👇💬' : 'Yorumlarda buluşalım!'}
+${tone === 'samimi' ? 'Siz hangi yöntemi kullanıyorsunuz? Hangi tip içerikler daha çok işinize yarıyor?' : 'Deneyimlerinizi ve success story\'lerinizi paylaşır mısınız?'} ${includeEmojis ? \'👇💬' : \'Yorumlarda buluşalım!'}
 
 ${Array.from({length: hashtagCount}, (_, i) => 
   i === 0 ? `#${industry || 'lifestyle'}` :
@@ -679,7 +679,7 @@ ${Array.from({length: hashtagCount}, (_, i) =>
 app.post("/api/seo-suggestions",
   suggestionsLimit,
   async (req, res) => {
-    const { membershipType, prompt, useReportBase, reportContext, websiteUrl, currentScore } = req.body;
+    const { membershipType, prompt, useReportBase } = req.body;
 
     if (membershipType !== "Pro" && membershipType !== "Advanced") {
       return res.status(403).json({ 
@@ -689,199 +689,118 @@ app.post("/api/seo-suggestions",
     }
 
     try {
-      const systemPrompt = `Sen Fortune 500 şirketlerine danışmanlık yapan, 20+ yıl deneyimli bir SEO stratejisti ve dijital pazarlama uzmanısın. Google'ın eski çalışanısın ve algoritma güncellemelerini içeriden biliyorsun.
+      const systemPrompt = `Sen Fortune 500 şirketlerine danışmanlık yapan, 20+ yıl deneyimli bir SEO stratejistisin. 
 
 UZMANLIKLARIN:
-- Teknik SEO optimizasyonu (Core Web Vitals, crawling, indexing)
-- İçerik stratejisi ve semantik anahtar kelime araştırması
-- E-A-T (Expertise, Authoritativeness, Trustworthiness) ve YMYL optimizasyonu
-- Google'ın 2024 algoritma güncellemeleri (Helpful Content, Product Reviews)
-- Uluslararası SEO ve hreflang implementasyonu
-- Local SEO ve Google Business Profile optimizasyonu
-- Schema markup ve structured data (JSON-LD)
+- Teknik SEO optimizasyonu
+- İçerik stratejisi ve anahtar kelime araştırması  
+- E-A-T (Expertise, Authoritativeness, Trustworthiness) optimizasyonu
+- Core Web Vitals ve sayfa deneyimi optimizasyonu
+- Uluslararası SEO ve çok dilli site stratejileri
+- Local SEO ve Google My Business optimizasyonu
+- Schema markup ve structured data implementasyonu
 - Link building ve dijital PR stratejileri
-- Conversion Rate Optimization (CRO) ve UX/SEO entegrasyonu
-- AI ve machine learning tabanlı SEO stratejileri
 
-GÖREV: Verilen SEO durumu için profesyonel, detaylı ve ROI odaklı çözümler üret. Her öneri için beklenen sonuç ve süre belirt.
+GÖREV: Verilen SEO sorusu/problemi için detaylı, uygulanabilir çözümler üret.
 
 ÇIKTI FORMATI (JSON):
 {
-  "quickWins": ["0-30 gün içinde uygulanabilir, hızlı ROI sağlayacak öneriler - minimum 6, maksimum 12"],
+  "quickWins": ["Hemen uygulanabilir, hızlı sonuç verecek öneriler - minimum 4, maksimum 8"],
   "issues": [
     {
-      "title": "Spesifik sorun başlığı",
-      "why": "Bu sorun neden kritik - Google algoritması ve ranking etkisi",
-      "how": ["Detaylı adım adım çözüm", "Kullanılacak araçlar ve kaynaklar", "Ölçüm metrikleri ve KPI'lar", "Beklenen süre ve ROI"]
+      "title": "Sorun başlığı",
+      "why": "Bu sorun neden kritik - SEO etkisi",
+      "how": ["Adım adım çözüm yöntemi", "Kullanılacak araçlar", "Ölçüm metrikleri"]
     }
   ],
-  ${membershipType === 'Advanced' ? '"snippets": [{"title": "Kod başlığı", "language": "html/css/js", "code": "Uygulanabilir kod örneği", "note": "Uygulama notu"}],' : ''}
   "roadmap": {
-    "d30": ["İlk 30 günde yapılacaklar - hızlı kazanımlar ve temel optimizasyonlar"],
-    "d60": ["30-60 gün arası - orta vadeli stratejiler ve içerik geliştirme"], 
-    "d90": ["60-90 gün arası - uzun vadeli büyüme ve otorite inşası"]
+    "d30": ["İlk 30 günde yapılacaklar - öncelikli aksiyonlar"],
+    "d60": ["30-60 gün arası - orta vadeli stratejiler"], 
+    "d90": ["60-90 gün arası - uzun vadeli optimizasyonlar"]
   },
-  "notes": ["Kritik uyarılar", "Sektör özel öneriler", "Rekabet analizi notları", "Ölçüm ve takip önerileri"]
+  "notes": ["Önemli notlar, uyarılar ve ek öneriler"]
 }
 
-ÖNEMLİ KURALLAR:
-1. Her öneri için NEDEN kritik olduğunu Google algoritması perspektifinden açıkla
-2. NASIL uygulanacağını adım adım, hangi araçlarla yapılacağını belirt
-3. Beklenen sonuçları ve süreleri gerçekçi tahmin et
-4. ROI odaklı düşün - hangi aksiyonlar en çok değer katacak
-5. Sektör özel öneriler ver - generic tavsiyeler değil
-6. Ölçülebilir hedefler koy (traffic artışı, ranking iyileşmesi vs.)`;
+ÖNEMLİ: Her öneri için NEDEN önemli olduğunu ve NASIL uygulanacağını detaylı açıkla.`;
 
-      const contextInfo = useReportBase && reportContext ? 
-        `\n\nMEVCUT SEO RAPORU:\n${reportContext}\n\nWebsite: ${websiteUrl}\nMevcut SEO Skoru: ${currentScore}/100` : 
-        `\n\nWebsite: ${websiteUrl || 'Belirtilmedi'}`;
-      
-      const userPrompt = `SEO DANIŞMANLIK TALEBİ:
-${prompt || "Bu website için kapsamlı SEO iyileştirme stratejisi ve eylem planı hazırla"}
-${contextInfo}
-
-BEKLENEN ÇIKTI:
-- Fortune 500 seviyesinde profesyonel analiz
-- Hızlı kazanım fırsatları (quick wins) öncelikli
-- Her öneri için ROI tahmini ve uygulama süresi
-- Rakip analizi ve sektör benchmarkları
-- Ölçülebilir hedefler ve KPI'lar
-- ${membershipType === 'Advanced' ? 'Uygulanabilir kod örnekleri dahil' : 'Detaylı uygulama rehberi'}`;
+      const userPrompt = prompt || "Genel SEO iyileştirme stratejisi öner";
       
       const suggestions = await callOpenAI([
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
-      ], { timeout: 60000, max_tokens: 10000, temperature: 0.2 });
+      ], { timeout: 45000, max_tokens: 6000, temperature: 0.3 });
 
-      let cleanedSuggestions = suggestions.trim();
-      if (cleanedSuggestions.startsWith('```json')) {
-        cleanedSuggestions = cleanedSuggestions.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      } else if (cleanedSuggestions.startsWith('```')) {
-        cleanedSuggestions = cleanedSuggestions.replace(/^```\s*/, '').replace(/\s*```$/, '');
-      }
-
-      const parsed = JSON.parse(cleanedSuggestions);
-      
-      // Add AI metadata
-      parsed.aiAnalysis = {
-        powered: true,
-        model: "gpt-4o-mini",
-        analysisDate: new Date().toISOString(),
-        membershipLevel: membershipType,
-        confidence: "high"
-      };
-      
-      console.log(`[SUCCESS] AI-powered SEO suggestions generated for ${membershipType} user`);
+      const parsed = JSON.parse(suggestions);
       res.json({ ok: true, data: parsed });
     } catch (error) {
-      console.warn(`[FALLBACK] AI suggestions failed, using enhanced fallback: ${error.message}`);
+      console.log(`[INFO] AI suggestions failed, using enhanced fallback: ${error.message}`);
       // Fallback suggestions
       const fallbackData = {
         quickWins: [
-          "🎯 Meta description'ları 150-160 karakter arasında optimize edin - %15-25 CTR artışı beklenir",
-          "🎯 H1 başlık yapısını düzenleyin - her sayfada tek, anahtar kelime içeren H1 kullanın",
-          "🎯 XML sitemap oluşturun ve Search Console'a gönderin - indeksleme hızını %40 artırır",
-          "🎯 Görsellere descriptive alt text ekleyin - görsel arama trafiğini %20 artırır",
-          "🎯 Core Web Vitals optimize edin - PageSpeed 85+ hedefleyin, ranking faktörü",
-          "🎯 Internal linking stratejisi kurun - sayfa otoritesini dağıtın"
+          "Meta description'ları 150-160 karakter arasında optimize edin - CTR artışı sağlar",
+          "H1 başlık yapısını düzenleyin - her sayfada tek, benzersiz H1 kullanın",
+          "XML sitemap oluşturun ve Search Console'a gönderin - indeksleme hızını artırır",
+          "Görsellere alt text ekleyin - hem erişilebilirlik hem görsel SEO için kritik",
+          "Sayfa yükleme hızını optimize edin - Core Web Vitals skorunu iyileştirin"
         ],
         issues: [
           {
-            title: "Meta etiketleri ve başlık hiyerarşisi optimizasyonu",
-            why: "Google'ın Helpful Content Update'i ile başlık yapısı daha kritik hale geldi. Kötü başlık yapısı ranking kaybına neden oluyor",
+            title: "Meta etiketleri ve başlık yapısı eksiklikleri",
+            why: "Arama motorları sayfa içeriğini tam olarak anlayamıyor, SERP görünürlüğü düşük",
             how: [
-              "Screaming Frog ile tüm sayfaları tara, eksik/duplicate title'ları tespit et",
-              "Her sayfa için benzersiz, 50-60 karakter meta title yaz (anahtar kelime başta)",
-              "Meta description'ları 150-160 karakter, call-to-action içerecek şekilde optimize et",
-              "H1-H6 hiyerarşisini semantik olarak kur (H1 tek, H2'ler ana konular)",
-              "Beklenen sonuç: 2-4 hafta içinde SERP CTR %15-25 artış"
+              "Her sayfa için benzersiz meta title (50-60 karakter) yazın",
+              "Meta description'ları hedef anahtar kelimelerle optimize edin",
+              "H1-H6 başlık hiyerarşisini mantıklı şekilde kurun",
+              "Screaming Frog ile eksik meta etiketleri tespit edin"
             ]
           },
           {
-            title: "Core Web Vitals ve sayfa deneyimi optimizasyonu", 
-            why: "Google'ın Page Experience Update'i ile Core Web Vitals ranking faktörü oldu. Kötü performans direkt ranking kaybı",
+            title: "Teknik SEO altyapı sorunları", 
+            why: "Arama motoru botları siteyi verimli tarayamıyor, indeksleme sorunları yaşanıyor",
             how: [
-              "PageSpeed Insights ve GTmetrix ile detaylı analiz yap",
-              "LCP (Largest Contentful Paint) 2.5s altına indir - görsel optimizasyonu",
-              "FID (First Input Delay) 100ms altına indir - JavaScript optimize et",
-              "CLS (Cumulative Layout Shift) 0.1 altına indir - layout shift'leri önle",
-              "WebP format kullan, lazy loading uygula, CDN kur",
-              "Beklenen sonuç: 4-6 hafta içinde PageSpeed 85+, ranking iyileşmesi"
+              "XML sitemap oluşturun ve düzenli güncelleyin",
+              "Robots.txt dosyasını optimize edin",
+              "Internal linking stratejisi geliştirin",
+              "Google Search Console'da crawl hatalarını düzeltin"
             ]
           },
           {
-            title: "E-A-T ve içerik otoritesi inşası",
-            why: "Google'ın algoritması E-A-T (Expertise, Authoritativeness, Trustworthiness) faktörlerini ağırlıklandırıyor",
+            title: "Sayfa hızı ve kullanıcı deneyimi",
+            why: "Yavaş yüklenen sayfalar hem kullanıcı deneyimini hem de sıralamayı olumsuz etkiliyor",
             how: [
-              "Yazar biyografileri ve uzmanlık alanları ekle (About Us sayfası güçlendir)",
-              "Sektör otoritelerinden backlink al (dijital PR stratejisi)",
-              "Google Business Profile'ı optimize et, müşteri yorumları topla",
-              "Expertise gösterir içerikler üret (case study, whitepaper)",
-              "Schema markup ile yazar ve organizasyon bilgilerini işaretle",
-              "Beklenen sonuç: 8-12 hafta içinde domain authority artışı"
+              "PageSpeed Insights ile performans analizi yapın",
+              "Görselleri WebP formatına çevirin ve sıkıştırın",
+              "CSS/JS dosyalarını minify edin",
+              "CDN kullanımını değerlendirin"
             ]
           }
         ],
-        ...(membershipType === 'Advanced' && {
-          snippets: [
-            {
-              title: "Schema.org JSON-LD Örneği",
-              language: "html",
-              code: `<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Şirket Adı",
-  "url": "${websiteUrl || 'https://example.com'}",
-  "logo": "${websiteUrl || 'https://example.com'}/logo.png",
-  "sameAs": [
-    "https://facebook.com/company",
-    "https://linkedin.com/company/company"
-  ]
-}
-</script>`,
-              note: "Bu kodu <head> bölümüne ekleyin. Google'ın sitenizi daha iyi anlamasını sağlar."
-            }
-          ]
-        }),
         roadmap: {
           d30: [
-            "🚀 Kritik sayfalar için meta title/description optimizasyonu (ana sayfa, kategori sayfaları)",
-            "🚀 XML sitemap oluştur ve Search Console'a gönder, indexing durumunu kontrol et", 
-            "🚀 H1 yapısını düzenle - her sayfada tek, anahtar kelime içeren H1",
-            "🚀 Core Web Vitals ölçümü başlat - PageSpeed Insights baseline al",
-            "🚀 Google Analytics 4 ve Search Console kurulumu/doğrulaması"
+            "Tüm sayfalar için meta title/description optimizasyonu",
+            "XML sitemap oluşturma ve Search Console'a gönderme", 
+            "Kritik sayfalarda H1 yapısını düzenleme",
+            "Google Analytics ve Search Console kurulumu"
           ],
           d60: [
-            "📈 Kapsamlı anahtar kelime araştırması - uzun kuyruk fırsatları tespit et",
-            "📈 İçerik gap analizi - rakiplerin güçlü olduğu konuları belirle",
-            "📈 Internal linking stratejisi - topic cluster modeli kur",
-            "📈 Teknik SEO audit - crawl errors, duplicate content temizle",
-            "📈 Schema markup implementasyonu - JSON-LD ile structured data"
+            "İçerik stratejisi geliştirme ve anahtar kelime araştırması",
+            "Internal linking yapısını güçlendirme",
+            "Sayfa hızı optimizasyonu (görseller, CSS/JS)",
+            "Schema markup implementasyonu"
           ],
           d90: [
-            "🎯 Backlink stratejisi - sektör otoritelerinden link building",
-            "🎯 İçerik takvimi - SEO odaklı blog stratejisi (haftada 2-3 post)",
-            "🎯 Rekabet analizi - Ahrefs/SEMrush ile gap analysis",
-            "🎯 E-A-T optimizasyonu - yazar profilleri, testimonial'lar",
-            "🎯 Performans dashboard'u - aylık SEO raporu otomasyonu"
+            "Backlink stratejisi ve dijital PR çalışmaları",
+            "İçerik takvimi oluşturma ve düzenli yayın planı",
+            "Rekabet analizi ve gap analysis",
+            "Performans takibi ve raporlama sisteminin kurulması"
           ]
         },
         notes: [
-          "⚠️ Bu öneriler Google'ın 2024 algoritma güncellemelerine göre hazırlandı",
-          "📊 Her değişiklik sonrası 2-4 hafta bekleyip sonuçları ölçün - SEO sabır işi",
-          "🔍 Google Search Console'u günlük kontrol edin - indexing sorunları hemen tespit edin",
-          "🏃‍♂️ SEO bir maraton, sprint değil - sürdürülebilir stratejiler kurun",
-          "📈 ROI odaklı düşünün - hangi aksiyonlar en çok traffic/conversion getirecek",
-          `💡 ${membershipType === 'Advanced' ? 'Advanced üye olarak kod örnekleri ve detaylı implementasyon rehberleri alıyorsunuz' : 'Advanced üyelikte kod örnekleri ve daha detaylı rehberler mevcut'}`
-        ],
-        aiAnalysis: {
-          powered: false,
-          fallbackMode: true,
-          analysisDate: new Date().toISOString(),
-          membershipLevel: membershipType,
-          confidence: "medium"
-        }
+          "Bu öneriler genel SEO best practice'leri temel alır",
+          "Her değişiklik sonrası 2-4 hafta bekleyip sonuçları ölçün",
+          "Google Search Console'u düzenli takip edin",
+          "SEO bir maraton, hızlı sonuç beklemeyin - sabırlı olun"
+        ]
       };
 
       res.json({ ok: true, data: fallbackData });
