@@ -256,4 +256,6 @@ const AISummaryCard: React.FC<{ report: SEOReport }> = ({ report }) => (
     <div className="mb-4">
       <div className="text-sm text-gray-600 mb-2">
         <strong>Durum:</strong> Skorunuz {report.score}/100 - {
-          report.score >= 80 
+          report.score >= 80 ? 'Mükemmel' : report.score >= 60 ? 'İyi' : 'Geliştirilmeli'
+        }
+      </div>
