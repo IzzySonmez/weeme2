@@ -441,7 +441,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         <div className="text-center py-12">
           <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz site eklenmemiş</h3>
-          <p className="text-gray-600">İlk sitenizi ekleyerek SEO analizine başlayın</p>
+          <p className="text-gray-600 mb-4">İlk sitenizi ekleyerek SEO analizine başlayın</p>
+          {user?.membershipType === 'Free' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+              <div className="text-sm text-blue-800">
+                <strong>Free Plan:</strong> {user.credits} kredi kaldı. Her tarama 1 kredi harcar.
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
