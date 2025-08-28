@@ -320,6 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
     const saved = localStorage.getItem(`reports_${user.id}`);
     if (saved) {
       try {
+        const updatedReports = JSON.parse(saved);
         setReports(updatedReports);
       } catch (error) {
         console.error('Error loading reports:', error);
@@ -389,21 +390,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
                 <div>
                   <div className="font-medium text-gray-900">{code.websiteUrl}</div>
                   <div className="text-sm text-gray-500">
-                    Son tarama: {new Date(code.lastScan).toLocaleString('tr-TR')}
+                    Son tarama: {new Date(code.lastScan).toLocaleDateString('tr-TR')} | 
+                    Sonraki: {new Date(code.nextScan).toLocaleDateString('tr-TR')}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleScanNow(code.websiteUrl)}
-                  disabled={isScanning}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isScanning ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <PlayCircle className="h-4 w-4" />
-                  )}
-                  Şimdi Tara
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleScanNow(code.websiteUrl)}
+                      disabled={isScanning || (user?.membershipType === 'Free' && user.credits <= 0)}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isScanning ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <PlayCircle className="h-4 w-4" />
+                      )}
+                      Şimdi Tara
+                    </button>
+                    <button
+                      onClick={() => handleRemoveWebsite(code.id)}
+                      className="text-red-600 hover:text-red-700 p-2"
+                      title="Siteyi kaldır"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <InstallationPanel trackingCode={code} user={user} />
@@ -441,21 +454,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         <div className="text-center py-12">
           <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz site eklenmemiş</h3>
-          <p className="text-gray-600 mb-4">İlk sitenizi ekleyerek SEO analizine başlayın</p>
-          {user?.membershipType === 'Free' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-              <div className="text-sm text-blue-800">
-                <strong>Free Plan:</strong> {user.credits} kredi kaldı. Her tarama 1 kredi harcar.
-              </div>
-            </div>
-          )}
+          <p className="text-gray-600">İlk sitenizi ekleyerek SEO analizine başlayın</p>
         </div>
       )}
     </div>
   );
 };
 
-export default Dashboard;
 const CompactReportRow: React.FC<{
   report: SEOReport;
   expanded: boolean;
@@ -533,4 +538,6 @@ const AISummaryCard: React.FC<{ report: SEOReport }> = ({ report }) => (
       </div>
     </div>
   </div>
-); 
+);
+
+export default Dashboard; 
