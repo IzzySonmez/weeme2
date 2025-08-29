@@ -295,10 +295,10 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-        <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8 text-center">
-          <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Giriş Gerekli</h3>
-          <p className="text-gray-600">SEO önerilerine erişmek için önce giriş yapın.</p>
+        <div className="glass rounded-3xl border border-white/20 shadow-2xl p-12 text-center">
+          <Lock className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">Giriş Gerekli</h3>
+          <p className="text-gray-600 text-lg">SEO önerilerine erişmek için önce giriş yapın.</p>
         </div>
       </div>
     );
@@ -306,71 +306,89 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   if (user.membershipType === 'Free') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
-          <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-12 text-center">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Brain className="h-10 w-10 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div className="max-w-4xl w-full relative z-10">
+          <div className="glass rounded-3xl border border-white/20 shadow-2xl p-12 text-center">
+            <div className="relative mb-12">
+              <div className="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-float shadow-2xl">
+                <Brain className="h-12 w-12 text-white" />
               </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce">
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce shadow-xl">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
             </div>
             
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
               AI SEO Önerileri
             </h2>
             
-            <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+            <p className="text-gray-600 text-xl mb-12 leading-relaxed max-w-3xl mx-auto">
               Yapay zeka destekli detaylı SEO önerileri ve kod snippet'leri için 
-              <span className="font-semibold text-purple-600"> Pro </span> veya 
-              <span className="font-semibold text-purple-600"> Advanced </span> planına geçin.
+              <span className="font-bold text-purple-600"> Pro </span> veya 
+              <span className="font-bold text-purple-600"> Advanced </span> planına geçin.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-600 rounded-lg">
-                    <Target className="h-5 w-5 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              <div className="glass rounded-3xl p-8 border border-blue-200 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Target className="h-8 w-8 text-white" />
                   </div>
-                  <span className="font-semibold text-blue-900">Pro Plan</span>
+                  <span className="font-bold text-blue-900 text-xl">Pro Plan</span>
                 </div>
-                <ul className="text-sm text-blue-800 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                    AI SEO önerileri
+                <ul className="text-left space-y-4">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-blue-800">AI SEO önerileri</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                    Detaylı eylem planları
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-blue-800">Detaylı eylem planları</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                    30-60-90 gün roadmap
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-blue-800">30-60-90 gün roadmap</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-blue-800">Sınırsız tarama</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-purple-600 rounded-lg">
-                    <Code className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="font-semibold text-purple-900">Advanced Plan</span>
+              <div className="glass rounded-3xl p-8 border border-purple-200 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 relative overflow-hidden">
+                <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full">
+                  EN POPÜLER
                 </div>
-                <ul className="text-sm text-purple-800 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-purple-600" />
-                    Tüm Pro özellikleri
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg">
+                    <Code className="h-8 w-8 text-white" />
+                  </div>
+                  <span className="font-bold text-purple-900 text-xl">Advanced Plan</span>
+                </div>
+                <ul className="text-left space-y-4">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-purple-800">Tüm Pro özellikleri</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-purple-600" />
-                    Kod snippet'leri
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-purple-800">Kod snippet'leri</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-purple-600" />
-                    AI içerik üretimi
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-purple-800">AI içerik üretimi</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-purple-800">7/24 premium destek</span>
                   </li>
                 </ul>
               </div>
@@ -378,11 +396,11 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
             <button
               onClick={() => onOpenBilling?.()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-3 mx-auto"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-3xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 flex items-center gap-4 mx-auto"
             >
-              <Rocket className="h-5 w-5" />
+              <Rocket className="h-6 w-6" />
               Planını Yükselt
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-6 w-6" />
             </button>
           </div>
         </div>
@@ -393,32 +411,40 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
   const isAdvanced = user.membershipType === 'Advanced';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-4 animate-gradient">
             AI SEO Asistanı
           </h1>
-          <p className="text-gray-600 text-lg">Yapay zeka destekli kişiselleştirilmiş SEO önerileri</p>
+          <p className="text-gray-600 text-xl">Yapay zeka destekli kişiselleştirilmiş SEO önerileri</p>
         </div>
 
         {/* Pro upsell banner */}
         {!isAdvanced && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-2xl p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl">
-                  <Rocket className="h-6 w-6 text-white" />
+          <div className="glass rounded-3xl border border-purple-200 p-8 mb-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg">
+                  <Rocket className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg">Advanced'a Yükselt</h3>
-                  <p className="text-gray-600">Kod snippet'leri ve gelişmiş AI önerileri için</p>
+                  <h3 className="font-bold text-gray-900 text-2xl">Advanced'a Yükselt</h3>
+                  <p className="text-gray-600 text-lg">Kod snippet'leri ve gelişmiş AI önerileri için</p>
                 </div>
               </div>
               <button
                 onClick={() => onOpenBilling?.()}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold shadow-2xl hover:shadow-3xl transform hover:scale-105"
               >
                 Yükselt
               </button>
@@ -428,24 +454,24 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
         <div className="space-y-8">
           {/* Main AI Assistant Panel */}
-          <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl">
-                <Brain className="h-6 w-6 text-white" />
+          <div className="glass rounded-3xl border border-white/20 shadow-2xl p-8">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg">
+                <Brain className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Yapay Zeka SEO Asistanı</h2>
-                <p className="text-gray-600">Siteniz için özelleştirilmiş öneriler alın</p>
+                <h2 className="text-3xl font-bold text-gray-900">Yapay Zeka SEO Asistanı</h2>
+                <p className="text-gray-600 text-lg">Siteniz için özelleştirilmiş öneriler alın</p>
               </div>
             </div>
 
             {/* Quick commands */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Wand2 className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Hızlı Komutlar</span>
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <Wand2 className="h-5 w-5 text-purple-600" />
+                <span className="font-semibold text-gray-700">Hızlı Komutlar</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {[
                   'Eksik başlık etiketleri ve zayıf iç bağlantılar için 10 maddelik eylem planı yaz',
                   'Sayfa hızı ve Core Web Vitals için 30-60-90 günlük iyileştirme planı çıkar',
@@ -456,7 +482,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                   <button
                     key={q}
                     onClick={() => setPrompt(q)}
-                    className="px-3 py-2 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-sm transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                    className="px-4 py-3 rounded-2xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-sm transition-all duration-200 glass hover:shadow-lg"
                   >
                     {q}
                   </button>
@@ -466,10 +492,10 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
             {/* Report context */}
             {useReportBase && latestReport && (
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode2 className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-900">Mevcut Rapor Temel Alınacak</span>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-3">
+                  <FileCode2 className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-blue-900">Mevcut Rapor Temel Alınacak</span>
                 </div>
                 <div className="text-sm text-blue-800 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div><strong>Site:</strong> {latestReport.websiteUrl}</div>
@@ -480,10 +506,10 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
             )}
 
             {!useReportBase && (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4 text-amber-600" />
-                  <span className="font-medium text-amber-900">Serbest Prompt Modu</span>
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-3">
+                  <Lightbulb className="h-5 w-5 text-amber-600" />
+                  <span className="font-semibold text-amber-900">Serbest Prompt Modu</span>
                 </div>
                 <div className="text-sm text-amber-800">
                   Rapor kullanılmayacak. Sadece girdiğiniz prompt'a göre genel öneriler alacaksınız.
@@ -493,20 +519,20 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
             {/* Checks grid (compact) */}
             {useReportBase && latestReport && (
-              <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Settings className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Teknik Kontroller</span>
+              <div className="glass rounded-2xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <Settings className="h-5 w-5 text-gray-600" />
+                  <span className="font-semibold text-gray-700">Teknik Kontroller</span>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {checks.map(c => (
-                    <div key={c.id} className="flex items-center gap-2 text-xs">
+                    <div key={c.id} className="flex items-center gap-3 text-sm">
                       {c.status === 'pass' ? (
-                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                       ) : c.status === 'fail' ? (
-                        <AlertTriangle className="h-3 w-3 text-rose-600" />
+                        <AlertTriangle className="h-4 w-4 text-rose-600 flex-shrink-0" />
                       ) : (
-                        <Clock className="h-3 w-3 text-amber-600" />
+                        <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
                       )}
                       <span className="text-gray-700 truncate">{c.title}</span>
                     </div>
@@ -516,8 +542,8 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
             )}
 
             {/* Prompt */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
                 {useReportBase ? 'Rapor üzerine ek soru/istek (opsiyonel):' : 'SEO sorunuz veya ihtiyacınız nedir?'}
               </label>
               <textarea
@@ -528,36 +554,36 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                   ? "Örnek: Bu eksikleri nasıl öncelik sırasına koymalıyım? Hangi araçları kullanabilirim?"
                   : "Örnek: E-ticaret sitesi için genel SEO stratejisi öner. Hangi araçları kullanmalıyım?"
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200 resize-none"
+                className="w-full px-6 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent glass transition-all duration-200 resize-none text-lg"
               />
             </div>
 
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-6">
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-8">
+                <label className="inline-flex items-center gap-3 text-gray-700 cursor-pointer">
                   <input
                     type="radio"
                     name="promptMode"
-                    className="border-gray-300 text-purple-600 focus:ring-purple-500"
+                    className="border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
                     checked={useReportBase}
                     onChange={() => setUseReportBase(true)}
                   />
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-purple-600" />
-                    Rapor Bazlı Öneriler
+                    <BarChart3 className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium">Rapor Bazlı Öneriler</span>
                   </div>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <label className="inline-flex items-center gap-3 text-gray-700 cursor-pointer">
                   <input
                     type="radio"
                     name="promptMode"
-                    className="border-gray-300 text-purple-600 focus:ring-purple-500"
+                    className="border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
                     checked={!useReportBase}
                     onChange={() => setUseReportBase(false)}
                   />
                   <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-purple-600" />
-                    Serbest Prompt
+                    <Search className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium">Serbest Prompt</span>
                   </div>
                 </label>
               </div>
@@ -565,12 +591,12 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
               <button
                 onClick={onGenerate}
                 disabled={loading || (useReportBase && !latestReport)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-2xl hover:shadow-3xl transform hover:scale-105"
               >
                 {loading ? (
-                  <Loader className="h-4 w-4 animate-spin" />
+                  <Loader className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-5 w-5" />
                 )}
                 {loading ? 'AI Düşünüyor...' : useReportBase ? 'Rapor Bazlı Öneriler Al' : 'Serbest Öneriler Al'}
               </button>
@@ -578,20 +604,20 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
             {/* Results */}
             {result && (
-              <div className="space-y-6 pt-6 border-t border-gray-200">
+              <div className="space-y-8 pt-8 border-t border-gray-200">
                 {Array.isArray(result.quickWins) && result.quickWins.length > 0 && (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                    <div className="flex items-center gap-2 text-green-700 font-semibold mb-4">
-                      <Zap className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-8">
+                    <div className="flex items-center gap-3 text-green-700 font-bold mb-6 text-xl">
+                      <Zap className="h-6 w-6" />
                       Hızlı Kazanımlar ({result.quickWins.length})
                     </div>
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                       {result.quickWins.map((w, i) => (
-                        <li key={i} className="text-green-800 flex items-start gap-3">
-                          <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-white text-xs font-bold">{i + 1}</span>
+                        <li key={i} className="text-green-800 flex items-start gap-4">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-white text-sm font-bold">{i + 1}</span>
                           </div>
-                          <span>{typeof w === 'string' ? w : 'Geçersiz öneri'}</span>
+                          <span className="text-lg">{typeof w === 'string' ? w : 'Geçersiz öneri'}</span>
                         </li>
                       ))}
                     </ul>
@@ -599,33 +625,33 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                 )}
 
                 {Array.isArray(result.issues) && result.issues.length > 0 && (
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
-                    <div className="flex items-center gap-2 text-blue-700 font-semibold mb-4">
-                      <Target className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-8">
+                    <div className="flex items-center gap-3 text-blue-700 font-bold mb-6 text-xl">
+                      <Target className="h-6 w-6" />
                       Sorunlar ve Çözümler ({result.issues.length})
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {result.issues.map((it, i) => (
-                        <div key={i} className="bg-white/60 backdrop-blur-sm border border-blue-200 rounded-xl p-4">
-                          <div className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-white text-xs font-bold">{i + 1}</span>
+                        <div key={i} className="glass border border-blue-200 rounded-2xl p-6">
+                          <div className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-xl">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-sm font-bold">{i + 1}</span>
                             </div>
                             {typeof it?.title === 'string' ? it.title : 'Başlık bulunamadı'}
                           </div>
                           {it?.why && typeof it.why === 'string' && (
-                            <div className="text-sm text-blue-800 mb-3 bg-blue-50 rounded-lg p-3">
+                            <div className="text-blue-800 mb-4 bg-blue-50 rounded-xl p-4">
                               <strong>Neden önemli:</strong> {it.why}
                             </div>
                           )}
                           {Array.isArray(it?.how) && it.how.length > 0 && (
                             <div>
-                              <div className="text-sm font-medium text-gray-700 mb-2">Nasıl çözülür:</div>
-                              <ul className="space-y-2">
+                              <div className="font-semibold text-gray-700 mb-3">Nasıl çözülür:</div>
+                              <ul className="space-y-3">
                                 {it.how.map((h, j) => (
-                                  <li key={j} className="text-sm text-gray-800 flex items-start gap-2">
-                                    <ArrowRight className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                                    {typeof h === 'string' ? h : 'Geçersiz adım'}
+                                  <li key={j} className="text-gray-800 flex items-start gap-3">
+                                    <ArrowRight className="h-5 w-5 text-blue-500 mt-1 flex-shrink-0" />
+                                    <span>{typeof h === 'string' ? h : 'Geçersiz adım'}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -638,24 +664,24 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                 )}
 
                 {isAdvanced && Array.isArray(result.snippets) && result.snippets.length > 0 && (
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
-                    <div className="flex items-center gap-2 text-purple-700 font-semibold mb-4">
-                      <Code className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-8">
+                    <div className="flex items-center gap-3 text-purple-700 font-bold mb-6 text-xl">
+                      <Code className="h-6 w-6" />
                       Kod Snippet'leri ({result.snippets.length})
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {result.snippets.map((s, i) => (
-                        <div key={i} className="bg-white/60 backdrop-blur-sm border border-purple-200 rounded-xl overflow-hidden">
-                          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50">
-                            <div className="font-semibold text-gray-900 flex items-center gap-2">
-                              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-white text-xs font-bold">{i + 1}</span>
+                        <div key={i} className="glass border border-purple-200 rounded-2xl overflow-hidden">
+                          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                            <div className="font-bold text-gray-900 flex items-center gap-3 text-lg">
+                              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-white text-sm font-bold">{i + 1}</span>
                               </div>
                               {typeof s?.title === 'string' ? s.title : 'Kod snippet'}
                             </div>
                             <button
                               onClick={() => copy(`snip-${i}`, s?.code || '')}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white text-sm text-gray-700 hover:text-gray-900 transition-all duration-200"
+                              className="flex items-center gap-2 px-4 py-2 rounded-xl glass hover:bg-white text-sm text-gray-700 hover:text-gray-900 transition-all duration-200"
                             >
                               {copiedKey === `snip-${i}` ? (
                                 <Check className="h-4 w-4 text-green-600" />
@@ -665,12 +691,12 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                               {copiedKey === `snip-${i}` ? 'Kopyalandı' : 'Kopyala'}
                             </button>
                           </div>
-                          <pre className="bg-gray-900 text-gray-100 p-4 text-sm overflow-x-auto font-mono">
+                          <pre className="bg-gray-900 text-gray-100 p-6 text-sm overflow-x-auto font-mono">
 {typeof s?.code === 'string' ? s.code : 'Kod bulunamadı'}
                           </pre>
                           {s?.note && typeof s.note === 'string' && (
-                            <div className="p-3 bg-gray-50 text-xs text-gray-600 border-t">
-                              <Info className="h-3 w-3 inline mr-1" />
+                            <div className="p-4 bg-gray-50 text-sm text-gray-600 border-t">
+                              <Info className="h-4 w-4 inline mr-2" />
                               {s.note}
                             </div>
                           )}
@@ -681,55 +707,55 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                 )}
 
                 {result.roadmap && typeof result.roadmap === 'object' && (
-                  <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
-                    <div className="flex items-center gap-2 text-orange-700 font-semibold mb-4">
-                      <TrendingUp className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-8">
+                    <div className="flex items-center gap-3 text-orange-700 font-bold mb-6 text-xl">
+                      <TrendingUp className="h-6 w-6" />
                       30-60-90 Gün Yol Haritası
                     </div>
-                    <div className="grid sm:grid-cols-3 gap-4">
-                      <div className="bg-white/60 backdrop-blur-sm border border-orange-200 rounded-xl p-4">
-                        <div className="flex items-center gap-2 font-semibold text-orange-900 mb-3">
-                          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">30</span>
+                    <div className="grid sm:grid-cols-3 gap-6">
+                      <div className="glass border border-orange-200 rounded-2xl p-6">
+                        <div className="flex items-center gap-3 font-bold text-orange-900 mb-4 text-lg">
+                          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">30</span>
                           </div>
                           İlk 30 Gün
                         </div>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {Array.isArray(result.roadmap.d30) && result.roadmap.d30.map((x, i) => (
-                            <li key={i} className="text-sm text-orange-800 flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <li key={i} className="text-orange-800 flex items-start gap-3">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                               {typeof x === 'string' ? x : 'Geçersiz görev'}
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div className="bg-white/60 backdrop-blur-sm border border-orange-200 rounded-xl p-4">
-                        <div className="flex items-center gap-2 font-semibold text-orange-900 mb-3">
-                          <div className="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">60</span>
+                      <div className="glass border border-orange-200 rounded-2xl p-6">
+                        <div className="flex items-center gap-3 font-bold text-orange-900 mb-4 text-lg">
+                          <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">60</span>
                           </div>
                           60 Gün
                         </div>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {Array.isArray(result.roadmap.d60) && result.roadmap.d60.map((x, i) => (
-                            <li key={i} className="text-sm text-orange-800 flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                            <li key={i} className="text-orange-800 flex items-start gap-3">
+                              <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
                               {typeof x === 'string' ? x : 'Geçersiz görev'}
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div className="bg-white/60 backdrop-blur-sm border border-orange-200 rounded-xl p-4">
-                        <div className="flex items-center gap-2 font-semibold text-orange-900 mb-3">
-                          <div className="w-6 h-6 bg-orange-700 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">90</span>
+                      <div className="glass border border-orange-200 rounded-2xl p-6">
+                        <div className="flex items-center gap-3 font-bold text-orange-900 mb-4 text-lg">
+                          <div className="w-8 h-8 bg-orange-700 rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">90</span>
                           </div>
                           90 Gün
                         </div>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {Array.isArray(result.roadmap.d90) && result.roadmap.d90.map((x, i) => (
-                            <li key={i} className="text-sm text-orange-800 flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-orange-700 rounded-full mt-2 flex-shrink-0"></div>
+                            <li key={i} className="text-orange-800 flex items-start gap-3">
+                              <div className="w-2 h-2 bg-orange-700 rounded-full mt-2 flex-shrink-0"></div>
                               {typeof x === 'string' ? x : 'Geçersiz görev'}
                             </li>
                           ))}
@@ -740,16 +766,16 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
                 )}
 
                 {Array.isArray(result.notes) && result.notes.length > 0 && (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6">
-                    <div className="flex items-center gap-2 text-gray-700 font-semibold mb-3">
-                      <Info className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-8">
+                    <div className="flex items-center gap-3 text-gray-700 font-bold mb-4 text-xl">
+                      <Info className="h-6 w-6" />
                       Önemli Notlar
                     </div>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {result.notes.map((n, i) => (
-                        <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                          <Star className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                          {typeof n === 'string' ? n : 'Geçersiz not'}
+                        <li key={i} className="text-gray-700 flex items-start gap-3">
+                          <Star className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
+                          <span>{typeof n === 'string' ? n : 'Geçersiz not'}</span>
                         </li>
                       ))}
                     </ul>
@@ -761,14 +787,14 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
           {/* History - Compact */}
           {history.length > 0 && (
-            <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-900">Son Öneriler</h3>
+            <div className="glass rounded-3xl border border-white/20 shadow-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Clock className="h-6 w-6 text-gray-600" />
+                <h3 className="font-bold text-gray-900 text-xl">Son Öneriler</h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {history.slice(0, 3).map(h => (
-                  <div key={h.id} className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-xl p-3">
+                  <div key={h.id} className="glass border border-gray-200 rounded-2xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-600">
                         {new Date(h.at).toLocaleString('tr-TR')}
