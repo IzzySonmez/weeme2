@@ -1,201 +1,282 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { LogIn, UserPlus, Sparkles } from 'lucide-react';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-type Mode = 'login' | 'register';
-
-interface LoginProps {
-  mode?: Mode;
+/* Custom animations and effects */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
-const Login: React.FC<LoginProps> = ({ mode }) => {
-  const { login, register, user, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // URL'den ?mode= al (prop yoksa)
-  const urlMode = useMemo<Mode>(() => {
-    const params = new URLSearchParams(location.search);
-    const m = (params.get('mode') || '').toLowerCase();
-    return (m === 'register' || m === 'login') ? (m as Mode) : 'login';
-  }, [location.search]);
-
-  const [active, setActive] = useState<Mode>(() => {
-    // İlk render'da prop varsa onu kullan, yoksa URL'den al
-    if (mode) return mode;
-    return urlMode;
-  });
-
-  useEffect(() => {
-    // Prop değişirse güncelle
-    if (mode && mode !== active) {
-      setActive(mode);
-    }
-  }, [mode, active]);
-
-  useEffect(() => {
-    // URL değişirse ve prop yoksa güncelle
-    if (!mode && urlMode !== active) {
-      setActive(urlMode);
-    }
-  }, [urlMode, active, mode]);
-
-  // Login/register başarılıysa panele
-  useEffect(() => {
-    if (user) navigate('/app', { replace: true });
-  }, [user, navigate]);
-
-  // Form state
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState(''); // register için
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const handleLogin = async () => {
-    if (!username || !password) return alert('Kullanıcı adı ve şifre girin.');
-    setBusy(true);
-    const ok = await login(username, password);
-    setBusy(false);
-    if (!ok) alert('Giriş başarısız.');
-  };
-
-  const handleRegister = async () => {
-    if (!username || !email || !password) return alert('Kullanıcı adı, e-posta ve şifre girin.');
-    setBusy(true);
-    const ok = await register(username, email, password);
-    setBusy(false);
-    if (!ok) {
-      // AuthContext duplicate kontrolleri alert basıyor; burada yedek uyarı bırakıyoruz
-      return;
-    }
-  };
-
-  if (isLoading) {
-    return <div className="min-h-screen grid place-items-center text-gray-600">Yükleniyor…</div>;
+@keyframes gradient {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
   }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white border rounded-xl shadow-sm p-6">
-        <div className="mb-6 flex items-center justify-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 group"
-            aria-label="weeme.ai ana sayfa"
-          >
-            <Sparkles className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors" />
-            <span className="text-lg font-semibold text-gray-900 group-hover:text-gray-800 transition-colors">
-              weeme.ai
-            </span>
-          </Link>
-        </div>
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
 
-        <div className="text-center mb-6">
-          <div className="text-sm text-gray-600">AI tabanlı SEO otomasyonu</div>
-        </div>
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+  }
+}
 
-        {/* Tabs */}
-        <div className="grid grid-cols-2 text-sm border rounded-lg overflow-hidden mb-6">
-          <button
-            onClick={() => setActive('login')}
-            className={`py-2 ${active === 'login' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
-          >
-            Giriş Yap
-          </button>
-          <button
-            onClick={() => setActive('register')}
-            className={`py-2 ${active === 'register' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'}`}
-          >
-            Üye Ol
-          </button>
-        </div>
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
 
-        {/* Forms */}
-        {active === 'login' ? (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Kullanıcı Adı</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="kullaniciadi"
-                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Şifre</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="•••••••"
-                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <button
-              onClick={handleLogin}
-              disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
-            >
-              <LogIn className="h-4 w-4" /> Giriş Yap
-            </button>
-            <div className="text-xs text-gray-600 text-center">
-              Hesabın yok mu?{' '}
-              <Link to="/register" className="text-purple-700 hover:underline">Üye ol</Link>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Kullanıcı Adı</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="kullaniciadi"
-                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">E‑posta</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ornek@domain.com"
-                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Şifre</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="•••••••"
-                className="mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <button
-              onClick={handleRegister}
-              disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50"
-            >
-              <UserPlus className="h-4 w-4" /> Üye Ol
-            </button>
-            <div className="text-xs text-gray-600 text-center">
-              Zaten hesabın var mı?{' '}
-              <Link to="/login" className="text-purple-700 hover:underline">Giriş yap</Link>
-            </div>
-          </div>
-        )}
+@keyframes morph {
+  0%, 100% {
+    border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%;
+  }
+  34% {
+    border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%;
+  }
+  67% {
+    border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%;
+  }
+}
 
-        <div className="mt-6 text-xs text-gray-500 text-center">
-          "Giriş Yap" veya "Üye Ol" diyerek <b>Kullanım Koşulları</b>nı kabul etmiş olursunuz.
-        </div>
-      </div>
-    </div>
-  );
-};
+@keyframes particles {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
 
-export default Login;
+@keyframes neon {
+  0%, 100% {
+    text-shadow: 0 0 5px #8b5cf6, 0 0 10px #8b5cf6, 0 0 15px #8b5cf6;
+  }
+  50% {
+    text-shadow: 0 0 10px #ec4899, 0 0 20px #ec4899, 0 0 30px #ec4899;
+  }
+}
+
+/* Animation classes */
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-morph {
+  animation: morph 8s ease-in-out infinite;
+}
+
+.animate-particles {
+  animation: particles 3s linear infinite;
+}
+
+.animate-neon {
+  animation: neon 2s ease-in-out infinite alternate;
+}
+
+/* Animation delays */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text utilities */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles */
+*:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+/* Button hover effects */
+.btn-hover-lift {
+  transition: all 0.3s ease;
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  border-radius: 12px;
+  padding: 2px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: white;
+  border-radius: 10px;
+  z-index: -1;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid rgba(139, 92, 246, 0.3);
+  border-top: 3px solid #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .text-responsive {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .auto-dark {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+}
