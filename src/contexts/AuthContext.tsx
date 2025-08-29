@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { db } from '../lib/database';
 import {
   migrateStorage,
@@ -93,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const id = Date.now().toString();
+    const id = uuidv4();
     const fresh: User = {
       id,
       username,
@@ -127,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const id = Date.now().toString();
+    const id = uuidv4();
     const fresh: User = {
       id,
       username,

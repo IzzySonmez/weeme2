@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/database';
 import type { SEOReport } from '../types';
@@ -230,7 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
 
     const normalizedUrl = normalizeUrl(newWebsite.trim());
     const newCode: TrackingCode = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       userId: user.id,
       websiteUrl: normalizedUrl,
       code: `weeme-${user.id}-${Date.now()}`,
@@ -282,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenBilling }) => {
         if (result.ok && result.report) {
           // Create new report with proper structure
           const newReport: SEOReport = {
-            id: Date.now().toString(),
+            id: uuidv4(),
             userId: user.id,
             websiteUrl: websiteUrl,
             score: result.report.score,
