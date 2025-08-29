@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/database';
+import { config } from '../lib/config';
 import type { SEOReport } from '../types';
 import {
   Globe,

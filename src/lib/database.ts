@@ -1,5 +1,6 @@
 // Database service layer - Hybrid approach (localStorage + Supabase)
 import { supabase } from './supabase';
+import { v4 as uuidv4 } from 'uuid';
 import type { User, SEOReport, TrackingCode, AIContent } from '../types';
 import { 
   loadCurrentUser, 

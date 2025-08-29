@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/database';
+import { config } from '../lib/config';
 import type { AIContent as AIContentType } from '../types';
 import {
   Sparkles,
@@ -198,7 +199,7 @@ const AIContent: React.FC = () => {
 
   const callOpenAI = async (): Promise<string> => {
     try {
-      const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+      const base = config.apiBase;
       const url = `${base}/api/ai-content`;
       
       console.log('[DEBUG] Making AI content API call to:', url);

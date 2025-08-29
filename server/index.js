@@ -6,9 +6,15 @@ import helmet from 'helmet';
 import { body, validationResult } from 'express-validator';
 import fetch from 'node-fetch';
 import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
-config({ path: '.env.local' });
+const isProduction = process.env.NODE_ENV === 'production';
+config({ path: isProduction ? '.env' : '.env.local' });
 
 // Validate environment on startup
 const validateEnvironment = () => {
@@ -17,10 +23,10 @@ const validateEnvironment = () => {
   console.log('[STARTUP] API_PORT:', process.env.API_PORT || '8787');
   
   if (OPENAI_KEY) {
-    if (OPENAI_KEY.startsWith('sk-') && OPENAI_KEY.length > 20) {
+    if (OPENAI_KEY.startsWith('sk-') && OPENAI_KEY.length > 20 && !OPENAI_KEY.includes('your-actual-openai-api-key-here')) {
       console.log('[STARTUP] ✅ OpenAI API Key: Valid format');
     } else {
-      console.log('[STARTUP] ⚠️  OpenAI API Key: Invalid format');
+      console.log('[STARTUP] ⚠️  OpenAI API Key: Invalid format or placeholder');
     }
   } else {
     console.log('[STARTUP] ⚠️  OpenAI API Key: Not configured (fallback mode)');
@@ -32,35 +38,84 @@ const app = express();
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.openai.com", "https://*.supabase.co"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  } : false,
+  crossOriginEmbedderPolicy: false,
+  hsts: isProduction ? {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  } : false
 }));
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3.w-credentialless-staticblitz.com', /\.stackblitz\.io$/, /\.webcontainer\.io$/],
-  credentials: true
-}));
+// CORS configuration
+const corsOptions = {
+  origin: isProduction 
+    ? [process.env.FRONTEND_URL, /\.weeme\.ai$/].filter(Boolean)
+    : ['http://localhost:5173', 'http://localhost:3000', 'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3.w-credentialless-staticblitz.com', /\.stackblitz\.io$/, /\.webcontainer\.io$/],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100
+  max: isProduction ? 50 : 100,
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 app.use(limiter);
+
+// Trust proxy in production
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files in production
+if (isProduction) {
+  const staticPath = path.join(__dirname, '../dist');
+  app.use(express.static(staticPath));
+  
+  // Serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
+}
+
 const PORT = process.env.API_PORT || 8787;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
+// Validate environment on startup
+validateEnvironment();
+
 console.log('[INFO] Server starting...');
-console.log('[INFO] OpenAI API Key:', OPENAI_KEY ? `Present (${OPENAI_KEY.substring(0, 7)}...)` : 'NOT CONFIGURED');
+console.log('[INFO] Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+console.log('[INFO] OpenAI API Key:', OPENAI_KEY && !OPENAI_KEY.includes('your-actual-openai-api-key-here') ? `Present (${OPENAI_KEY.substring(0, 7)}...)` : 'NOT CONFIGURED');
 
 // OpenAI API çağrısı
 async function callOpenAI(messages, maxTokens = 2000) {
-  if (!OPENAI_KEY || !OPENAI_KEY.startsWith('sk-')) {
+  if (!OPENAI_KEY || !OPENAI_KEY.startsWith('sk-') || OPENAI_KEY.includes('your-actual-openai-api-key-here')) {
     console.log('[WARNING] OpenAI API key not configured, using fallback');
     return null;
   }
@@ -73,7 +128,7 @@ async function callOpenAI(messages, maxTokens = 2000) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENAI_KEY}`,
-        'User-Agent': 'weeme-ai/1.0'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 weeme-ai/1.0'
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',

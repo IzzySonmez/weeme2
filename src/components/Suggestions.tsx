@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { config } from '../lib/config';
 import type { SEOReport } from '../types';
 import {
   Sparkles,
@@ -227,7 +228,7 @@ const Suggestions: React.FC<SuggestionsProps> = ({ onOpenBilling }) => {
 
   const callOpenAI = async (): Promise<AIStruct> => {
     try {
-      const base = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+      const base = config.apiBase;
       const url = `${base}/api/seo-suggestions`;
       
       console.log('[DEBUG] Making suggestions API call to:', url);
