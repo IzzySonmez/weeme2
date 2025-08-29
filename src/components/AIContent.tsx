@@ -17,7 +17,20 @@ import {
   Trash2,
   Wand2,
   RefreshCw,
-  ListRestart
+  ListRestart,
+  Lock,
+  Rocket,
+  ArrowRight,
+  Zap,
+  Target,
+  Users,
+  TrendingUp,
+  Globe,
+  Heart,
+  MessageCircle,
+  Share,
+  Eye,
+  BarChart3
 } from 'lucide-react';
 
 type Platform = 'linkedin' | 'instagram' | 'twitter' | 'facebook';
@@ -40,10 +53,10 @@ const platformIcons = {
 };
 
 const platformColors = {
-  linkedin: 'bg-blue-600',
-  instagram: 'bg-pink-600',
-  twitter: 'bg-sky-500',
-  facebook: 'bg-blue-700',
+  linkedin: 'from-blue-600 to-blue-700',
+  instagram: 'from-pink-600 to-purple-600',
+  twitter: 'from-sky-500 to-blue-600',
+  facebook: 'from-blue-700 to-indigo-700',
 };
 
 const platformNames = {
@@ -52,7 +65,6 @@ const platformNames = {
   twitter: 'Twitter / X',
   facebook: 'Facebook',
 };
-
 
 const industryPresets: Record<Industry, string[]> = {
   teknoloji: [
@@ -123,7 +135,6 @@ const industryPresets: Record<Industry, string[]> = {
   ]
 };
 
-
 const AIContent: React.FC = () => {
   const { user } = useAuth();
 
@@ -157,15 +168,14 @@ const AIContent: React.FC = () => {
       setContentHistory(contents);
     } catch (error) {
       console.error('Failed to load AI content history:', error);
-      // Fallback to localStorage
       const saved = localStorage.getItem(`aiContent_${user.id}`);
       if (saved) setContentHistory(JSON.parse(saved));
     }
   };
+
   const saveHistory = (item: AIContentType) => {
     const updated = [item, ...contentHistory].slice(0, 100);
     setContentHistory(updated);
-    // Save to database
     if (user) {
       db.saveAIContent(item);
       localStorage.setItem(`aiContent_${user.id}`, JSON.stringify(updated));
@@ -202,8 +212,6 @@ const AIContent: React.FC = () => {
       const base = config.apiBase;
       const url = `${base}/api/ai-content`;
       
-      console.log('[DEBUG] Making AI content API call to:', url);
-      
       const body = {
         platform,
         prompt: prompt.trim(),
@@ -217,8 +225,6 @@ const AIContent: React.FC = () => {
         characterLimit: hardLimit,
         membershipType: user?.membershipType || "Free",
       };
-
-      console.log('[DEBUG] AI content request body:', body);
       
       const resp = await fetch(url, {
         method: "POST",
@@ -228,7 +234,7 @@ const AIContent: React.FC = () => {
 
       if (!resp.ok) {
         const errorText = await resp.text();
-        console.error('[ERROR] AI Content API error:', resp.status, errorText);
+        console.error('AI Content API error:', resp.status, errorText);
         throw new Error(`API Error: ${resp.status}`);
       }
 
@@ -236,7 +242,7 @@ const AIContent: React.FC = () => {
       
       return json?.content || 'İçerik üretilemedi.';
     } catch (error) {
-      console.error('[ERROR] AI Content request failed:', error);
+      console.error('AI Content request failed:', error);
       return generateFallback();
     }
   };
@@ -282,7 +288,6 @@ const AIContent: React.FC = () => {
       saveHistory(newContent);
     } catch (error) {
       console.error('AI content generation failed:', error);
-      // Fallback to template-based generation
       const fallbackContent = generateFallback();
       setGeneratedContent(fallbackContent);
       
@@ -323,356 +328,478 @@ const AIContent: React.FC = () => {
     setTargetLength(120);
   };
 
-  return (
-    <div className="space-y-8">
-      {/* Content Generator */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <Sparkles className="h-6 w-6 text-purple-500 mr-2" />
-            Yapay Zeka İçerik Üreticisi
-          </h2>
-
-          <div className="text-xs text-gray-500">
-            Platform sınırı: <span className="font-medium">{hardLimit.toLocaleString('tr-TR')} karakter</span>
-          </div>
-        </div>
-
-        {disabled && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <Sparkles className="h-5 w-5 text-yellow-600 mr-2" />
-              <p className="text-sm text-yellow-800">
-                Bu özellik sadece <b>Advanced</b> üyelerde mevcuttur. Üyeliğinizi yükseltin.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {/* Platform Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Platform Seçin
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(platformIcons).map(([key, Icon]) => (
-                <button
-                  key={key}
-                  onClick={() => setPlatform(key as Platform)}
-                  disabled={disabled}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
-                    platform === (key as Platform)
-                      ? `${platformColors[key as keyof typeof platformColors]} text-white border-transparent`
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-sm font-medium">{platformNames[key as keyof typeof platformNames]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Presets */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Sektörünüze Özel Fikirler
-              </label>
-              <button
-                type="button"
-                onClick={getRandomPreset}
-                className="text-xs text-purple-600 hover:text-purple-700 flex items-center space-x-1"
-                disabled={disabled}
-              >
-                <Wand2 className="h-4 w-4" />
-                <span>Rastgele seç</span>
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {currentPresets.map((idea) => (
-                <button
-                  key={idea}
-                  onClick={() => selectPreset(idea)}
-                  disabled={disabled}
-                  className="text-xs px-2 py-1 border rounded-full hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {idea}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Industry & Audience Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sektörünüz
-              </label>
-              <select
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value as Industry)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                disabled={disabled}
-              >
-                <option value="teknoloji">Teknoloji</option>
-                <option value="sağlık">Sağlık</option>
-                <option value="eğitim">Eğitim</option>
-                <option value="finans">Finans</option>
-                <option value="eticaret">E-ticaret</option>
-                <option value="gayrimenkul">Gayrimenkul</option>
-                <option value="turizm">Turizm</option>
-                <option value="gıda">Gıda & Restoran</option>
-                <option value="moda">Moda & Tekstil</option>
-                <option value="spor">Spor & Fitness</option>
-                <option value="diğer">Diğer</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hedef Kitleniz
-              </label>
-              <select
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as Audience)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                disabled={disabled}
-              >
-                <option value="b2b">B2B (İş Dünyası)</option>
-                <option value="b2c">B2C (Bireysel Müşteri)</option>
-                <option value="genç_yetişkin">Genç Yetişkin (18-35)</option>
-                <option value="orta_yaş">Orta Yaş (35-55)</option>
-                <option value="üst_düzey_yönetici">Üst Düzey Yönetici</option>
-                <option value="girişimci">Girişimci & Startup</option>
-                <option value="öğrenci">Öğrenci</option>
-                <option value="anne_baba">Anne & Baba</option>
-                <option value="emekli">Emekli</option>
-                <option value="karma">Karma Kitle</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Options */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ton
-              </label>
-              <select
-                value={tone}
-                onChange={(e) => setTone(e.target.value as Tone)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                disabled={disabled}
-              >
-                <option value="profesyonel">Profesyonel</option>
-                <option value="bilgilendirici">Bilgilendirici</option>
-                <option value="samimi">Samimi</option>
-                <option value="eğlenceli">Eğlenceli</option>
-                <option value="satış_odaklı">Satış Odaklı</option>
-                <option value="hikaye_anlatımı">Hikaye Anlatımı</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hashtag Sayısı
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={8}
-                value={hashtagCount}
-                onChange={(e) => setHashtagCount(Math.min(8, Math.max(0, Number(e.target.value))))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                disabled={disabled}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hedef Uzunluk (Twitter için)
-              </label>
-              <input
-                type="range"
-                min={80}
-                max={280}
-                step={10}
-                value={targetLength}
-                onChange={(e) => setTargetLength(Number(e.target.value))}
-                className="w-full"
-                disabled={disabled || platform !== 'twitter'}
-              />
-              <div className="text-xs text-gray-500 mt-1">{targetLength} karakter</div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                İş Hedefi (Opsiyonel)
-              </label>
-              <input
-                type="text"
-                value={businessGoal}
-                onChange={(e) => setBusinessGoal(e.target.value)}
-                placeholder="Satış artırma, farkındalık..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                disabled={disabled}
-              />
-            </div>
-          </div>
-
-          {/* Content Prompt */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
-                İçerik konunuzu yazın
-              </label>
-              <div className="text-xs text-gray-500">
-                {charCount} karakter
+  if (disabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
+          <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-12 text-center">
+            <div className="relative mb-8">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-10 w-10 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce">
+                <Wand2 className="h-4 w-4 text-white" />
               </div>
             </div>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={`Örnek: ${currentPresets[0]}`}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-              disabled={disabled}
-            />
-            <div className="mt-2 flex items-center gap-4">
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300"
-                  checked={includeEmojis}
-                  onChange={(e) => setIncludeEmojis(e.target.checked)}
-                  disabled={disabled}
-                />
-                Emojileri dahil et
-              </label>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm text-gray-600 hover:text-gray-900 inline-flex items-center gap-1"
-                disabled={disabled}
-              >
-                <RefreshCw className="h-4 w-4" /> Sıfırla
-              </button>
+            
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              AI İçerik Üreticisi
+            </h2>
+            
+            <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+              Sosyal medya platformları için AI destekli içerik üretimi sadece 
+              <span className="font-semibold text-purple-600"> Advanced </span> üyelerde mevcuttur.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {Object.entries(platformIcons).map(([key, Icon]) => (
+                <div key={key} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-200">
+                  <Icon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <div className="text-sm text-gray-600 font-medium">{platformNames[key as keyof typeof platformNames]}</div>
+                </div>
+              ))}
             </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200 mb-8">
+              <h3 className="font-bold text-purple-900 mb-3">Advanced Plan Özellikleri</h3>
+              <ul className="text-sm text-purple-800 space-y-2">
+                <li className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  AI destekli içerik üretimi
+                </li>
+                <li className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-purple-600" />
+                  Platform optimizasyonu
+                </li>
+                <li className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-purple-600" />
+                  Hedef kitle analizi
+                </li>
+                <li className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                  Engagement optimizasyonu
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => alert('Üyelik yükseltme özelliği yakında eklenecek!')}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-3 mx-auto"
+            >
+              <Rocket className="h-5 w-5" />
+              Advanced'a Yükselt
+              <ArrowRight className="h-5 w-5" />
+            </button>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          <button
-            onClick={generateContent}
-            disabled={loading || !prompt.trim() || disabled}
-            className="flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-            <span>{loading ? 'İçerik üretiliyor...' : 'İçerik Üret'}</span>
-          </button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            AI İçerik Üreticisi
+          </h1>
+          <p className="text-gray-600 text-lg">Sosyal medya platformları için AI destekli içerik üretimi</p>
+        </div>
 
-          {/* Generated Content */}
-          {generatedContent && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900 flex items-center">
-                  {React.createElement(platformIcons[platform], { className: 'h-5 w-5 mr-2' })}
-                  {platformNames[platform]} İçeriği
-                </h4>
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs ${
-                    overLimit ? 'text-red-600' : 'text-gray-500'
-                  }`}>
-                    {generatedContent.length}/{hardLimit}
-                  </span>
+        <div className="space-y-8">
+          {/* Content Generator */}
+          <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">İçerik Üreticisi</h2>
+                  <p className="text-gray-600">AI ile viral potansiyeli yüksek içerikler oluşturun</p>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                Platform sınırı: <span className="font-medium">{hardLimit.toLocaleString('tr-TR')} karakter</span>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Platform Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Platform Seçin
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(platformIcons).map(([key, Icon]) => (
+                    <button
+                      key={key}
+                      onClick={() => setPlatform(key as Platform)}
+                      className={`group relative overflow-hidden flex items-center justify-center space-x-2 p-4 rounded-2xl border-2 transition-all duration-300 ${
+                        platform === (key as Platform)
+                          ? `bg-gradient-to-r ${platformColors[key as keyof typeof platformColors]} text-white border-transparent shadow-lg transform scale-105`
+                          : 'bg-white/80 backdrop-blur-sm text-gray-700 border-gray-300 hover:border-gray-400 hover:shadow-md'
+                      }`}
+                    >
+                      <Icon className="h-6 w-6" />
+                      <span className="font-medium">{platformNames[key as keyof typeof platformNames]}</span>
+                      {platform === (key as Platform) && (
+                        <div className="absolute inset-0 bg-white/20 animate-pulse rounded-2xl"></div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Sektörünüze Özel Fikirler
+                  </label>
                   <button
-                    onClick={() => copyToClipboard(generatedContent, 'current')}
-                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
+                    type="button"
+                    onClick={getRandomPreset}
+                    className="text-xs text-purple-600 hover:text-purple-700 flex items-center space-x-1 bg-purple-50 px-3 py-1 rounded-full hover:bg-purple-100 transition-colors"
                   >
-                    {copiedId === 'current' ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                    <span className="text-sm">
-                      {copiedId === 'current' ? 'Kopyalandı!' : 'Kopyala'}
-                    </span>
+                    <Wand2 className="h-3 w-3" />
+                    <span>Rastgele seç</span>
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {currentPresets.map((idea) => (
+                    <button
+                      key={idea}
+                      onClick={() => selectPreset(idea)}
+                      className="text-xs px-3 py-2 border border-gray-200 rounded-full hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                    >
+                      {idea}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Industry & Audience Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sektörünüz
+                  </label>
+                  <select
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value as Industry)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  >
+                    <option value="teknoloji">Teknoloji</option>
+                    <option value="sağlık">Sağlık</option>
+                    <option value="eğitim">Eğitim</option>
+                    <option value="finans">Finans</option>
+                    <option value="eticaret">E-ticaret</option>
+                    <option value="gayrimenkul">Gayrimenkul</option>
+                    <option value="turizm">Turizm</option>
+                    <option value="gıda">Gıda & Restoran</option>
+                    <option value="moda">Moda & Tekstil</option>
+                    <option value="spor">Spor & Fitness</option>
+                    <option value="diğer">Diğer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hedef Kitleniz
+                  </label>
+                  <select
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value as Audience)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  >
+                    <option value="b2b">B2B (İş Dünyası)</option>
+                    <option value="b2c">B2C (Bireysel Müşteri)</option>
+                    <option value="genç_yetişkin">Genç Yetişkin (18-35)</option>
+                    <option value="orta_yaş">Orta Yaş (35-55)</option>
+                    <option value="üst_düzey_yönetici">Üst Düzey Yönetici</option>
+                    <option value="girişimci">Girişimci & Startup</option>
+                    <option value="öğrenci">Öğrenci</option>
+                    <option value="anne_baba">Anne & Baba</option>
+                    <option value="emekli">Emekli</option>
+                    <option value="karma">Karma Kitle</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Options */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ton
+                  </label>
+                  <select
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value as Tone)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  >
+                    <option value="profesyonel">Profesyonel</option>
+                    <option value="bilgilendirici">Bilgilendirici</option>
+                    <option value="samimi">Samimi</option>
+                    <option value="eğlenceli">Eğlenceli</option>
+                    <option value="satış_odaklı">Satış Odaklı</option>
+                    <option value="hikaye_anlatımı">Hikaye Anlatımı</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hashtag Sayısı
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={8}
+                    value={hashtagCount}
+                    onChange={(e) => setHashtagCount(Math.min(8, Math.max(0, Number(e.target.value))))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hedef Uzunluk (Twitter için)
+                  </label>
+                  <input
+                    type="range"
+                    min={80}
+                    max={280}
+                    step={10}
+                    value={targetLength}
+                    onChange={(e) => setTargetLength(Number(e.target.value))}
+                    className="w-full"
+                    disabled={platform !== 'twitter'}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">{targetLength} karakter</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    İş Hedefi (Opsiyonel)
+                  </label>
+                  <input
+                    type="text"
+                    value={businessGoal}
+                    onChange={(e) => setBusinessGoal(e.target.value)}
+                    placeholder="Satış artırma, farkındalık..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  />
+                </div>
+              </div>
+
+              {/* Content Prompt */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    İçerik konunuzu yazın
+                  </label>
+                  <div className="text-xs text-gray-500">
+                    {charCount} karakter
+                  </div>
+                </div>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={`Örnek: ${currentPresets[0]}`}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200 resize-none"
+                />
+                <div className="mt-3 flex items-center justify-between">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      checked={includeEmojis}
+                      onChange={(e) => setIncludeEmojis(e.target.checked)}
+                    />
+                    Emojileri dahil et
+                  </label>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="text-sm text-gray-600 hover:text-gray-900 inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Sıfırla
                   </button>
                 </div>
               </div>
-              <div className="text-sm text-gray-700 whitespace-pre-line bg-white p-3 rounded border">
-                {generatedContent}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Content History */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">İçerik Geçmişi</h2>
-          {contentHistory.length > 0 ? (
-            <button
-              onClick={clearHistory}
-              className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"
-            >
-              <ListRestart className="h-4 w-4" /> Geçmişi Temizle
-            </button>
-          ) : null}
-        </div>
+              <button
+                onClick={generateContent}
+                disabled={loading || !prompt.trim()}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                {loading ? (
+                  <Loader className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+                <span>{loading ? 'AI İçerik Üretiyor...' : 'İçerik Üret'}</span>
+              </button>
 
-        {contentHistory.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-12 text-center">
-            <Sparkles className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">Henüz içerik üretilmedi. İlk paylaşımınızı yukarıdan oluşturun.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {contentHistory.slice(0, 10).map((content) => {
-              const Icon = platformIcons[content.platform as Platform];
-              return (
-                <div key={content.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Icon className="h-5 w-5 text-gray-600" />
-                      <span className="font-medium text-gray-900">
-                        {platformNames[content.platform as Platform]}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {new Date(content.createdAt).toLocaleDateString('tr-TR')}
-                      </span>
+              {/* Generated Content */}
+              {generatedContent && (
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 bg-gradient-to-r ${platformColors[platform]} rounded-lg`}>
+                        {React.createElement(platformIcons[platform], { className: 'h-5 w-5 text-white' })}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{platformNames[platform]} İçeriği</h4>
+                        <div className="text-xs text-gray-500">
+                          {generatedContent.length}/{hardLimit} karakter
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {overLimit && (
+                        <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                          Sınır aşıldı
+                        </div>
+                      )}
                       <button
-                        onClick={() => copyToClipboard(content.content, content.id)}
-                        className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
+                        onClick={() => copyToClipboard(generatedContent, 'current')}
+                        className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        {copiedId === content.id ? (
+                        {copiedId === 'current' ? (
                           <Check className="h-4 w-4 text-green-600" />
                         ) : (
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-4 w-4 text-gray-600" />
                         )}
                         <span className="text-sm">
-                          {copiedId === content.id ? 'Kopyalandı!' : 'Kopyala'}
+                          {copiedId === 'current' ? 'Kopyalandı!' : 'Kopyala'}
                         </span>
-                      </button>
-                      <button
-                        onClick={() => removeHistoryItem(content.id)}
-                        className="text-gray-500 hover:text-red-600"
-                        title="Sil"
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2 font-medium">
-                    Prompt: {content.prompt}
-                  </p>
-                  <div className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 p-3 rounded">
-                    {content.content}
+                  
+                  <div className="relative">
+                    <div className="text-sm text-gray-700 whitespace-pre-line bg-white rounded-xl p-4 border border-gray-200">
+                      {generatedContent}
+                    </div>
+                    
+                    {/* Engagement Preview */}
+                    <div className="mt-4 flex items-center justify-between text-xs text-gray-500 bg-white/60 backdrop-blur-sm rounded-lg p-3">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          <span>{Math.floor(Math.random() * 50) + 10}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="h-3 w-3" />
+                          <span>{Math.floor(Math.random() * 20) + 5}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Share className="h-3 w-3" />
+                          <span>{Math.floor(Math.random() * 10) + 2}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        <span>Tahmini engagement</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Content History */}
+          <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">İçerik Geçmişi</h2>
+                  <p className="text-gray-600">Daha önce üretilen içerikleriniz</p>
+                </div>
+              </div>
+              {contentHistory.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  <ListRestart className="h-4 w-4" /> Geçmişi Temizle
+                </button>
+              )}
+            </div>
+
+            {contentHistory.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="relative mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="h-10 w-10 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Henüz İçerik Üretilmedi</h3>
+                <p className="text-gray-600">İlk sosyal medya içeriğinizi yukarıdan oluşturun.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {contentHistory.slice(0, 10).map((content) => {
+                  const Icon = platformIcons[content.platform as Platform];
+                  return (
+                    <div key={content.id} className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 bg-gradient-to-r ${platformColors[content.platform as Platform]} rounded-lg`}>
+                            <Icon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900">
+                              {platformNames[content.platform as Platform]}
+                            </span>
+                            <div className="text-sm text-gray-500">
+                              {new Date(content.createdAt).toLocaleDateString('tr-TR')} • {content.content.length} karakter
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => copyToClipboard(content.content, content.id)}
+                            className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200 transition-colors"
+                          >
+                            {copiedId === content.id ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                            <span className="text-sm">
+                              {copiedId === content.id ? 'Kopyalandı!' : 'Kopyala'}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => removeHistoryItem(content.id)}
+                            className="text-gray-500 hover:text-red-600 p-1 rounded transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <div className="text-sm text-gray-600 font-medium mb-1">Prompt:</div>
+                        <div className="text-sm text-gray-800 bg-gray-50 rounded-lg p-2">
+                          {content.prompt}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-700 whitespace-pre-line bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                        {content.content}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

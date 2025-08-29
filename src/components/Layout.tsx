@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, BarChart3, Lightbulb, Sparkles, CreditCard } from 'lucide-react';
+import { LogOut, BarChart3, Lightbulb, Sparkles, CreditCard, Settings, User, Crown } from 'lucide-react';
 
 type Tab = 'dashboard' | 'suggestions' | 'ai-content';
 
@@ -24,24 +24,39 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
-  // Sekmeler (guard'lar membershipType'a bağlı)
   const tabs: Array<{ id: Tab; label: string; icon: React.ComponentType<any>; guard: (m?: string) => boolean }> = [
-    { id: 'dashboard', label: 'Skorum', icon: BarChart3, guard: () => true },
-    { id: 'suggestions', label: 'Öneriler', icon: Lightbulb, guard: () => true },
-    { id: 'ai-content', label: 'Yapay Zeka Gönderi', icon: Sparkles, guard: (m?: string) => m === 'Advanced' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, guard: () => true },
+    { id: 'suggestions', label: 'AI Öneriler', icon: Lightbulb, guard: (m?: string) => m === 'Pro' || m === 'Advanced' },
+    { id: 'ai-content', label: 'İçerik Üret', icon: Sparkles, guard: (m?: string) => m === 'Advanced' },
   ];
 
-  const membershipBadge =
-    user?.membershipType === 'Advanced'
-      ? <span className="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">Advanced</span>
-      : user?.membershipType === 'Pro'
-      ? <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">Pro</span>
-      : <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">Free</span>;
+  const membershipBadge = {
+    'Advanced': { 
+      component: <span className="px-3 py-1 rounded-full text-xs bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 font-semibold border border-purple-200">Advanced</span>,
+      icon: <Crown className="h-4 w-4 text-purple-600" />
+    },
+    'Pro': { 
+      component: <span className="px-3 py-1 rounded-full text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 font-semibold border border-blue-200">Pro</span>,
+      icon: <Settings className="h-4 w-4 text-blue-600" />
+    },
+    'Free': { 
+      component: <span className="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700 font-medium border border-gray-200">Free</span>,
+      icon: <User className="h-4 w-4 text-gray-600" />
+    }
+  };
+
+  const currentMembership = membershipBadge[user?.membershipType || 'Free'];
 
   const creditLabel =
     user?.membershipType === 'Free'
-      ? <span className="text-sm text-gray-700">Kredi: <b>{user?.credits ?? 0}</b></span>
-      : <span className="text-sm text-gray-700">Kredi: ∞</span>;
+      ? <span className="text-sm text-gray-700 flex items-center gap-1">
+          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          Kredi: <b>{user?.credits ?? 0}</b>
+        </span>
+      : <span className="text-sm text-gray-700 flex items-center gap-1">
+          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+          Sınırsız
+        </span>;
 
   const handleLogout = () => {
     logout();
@@ -49,57 +64,58 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white/60 backdrop-blur-xl border-b border-white/20 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Sol logo/marka: weeme.ai → ana sayfa */}
+            {/* Logo */}
             <div className="flex items-center">
               <Link
                 to="/"
                 className="flex items-center gap-2 group"
                 aria-label="weeme.ai ana sayfa"
               >
-                <Sparkles className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors" />
-                <span className="text-lg font-semibold text-gray-900 group-hover:text-gray-800 transition-colors">
+                <div className="relative">
+                  <Sparkles className="h-7 w-7 text-purple-600 group-hover:text-purple-700 transition-colors" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-ping"></div>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:to-pink-700 transition-all">
                   weeme.ai
                 </span>
               </Link>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600 hidden sm:inline">Hoş geldin, {user?.username}</span>
-              {membershipBadge}
-              <div className="hidden sm:block">{creditLabel}</div>
+            {/* User Info & Actions */}
+            <div className="flex items-center space-x-4">
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="text-sm text-gray-600">
+                  Hoş geldin, <span className="font-semibold text-gray-900">{user?.username}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currentMembership.icon}
+                  {currentMembership.component}
+                </div>
+                <div className="hidden md:block">{creditLabel}</div>
+              </div>
 
               <button
                 onClick={onOpenBilling}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
                 aria-label="Plan ve ödeme ayarları"
               >
                 <CreditCard className="h-4 w-4" />
-                <span className="text-sm">Plan / Ödeme</span>
+                <span className="hidden sm:inline">Plan & Ödeme</span>
+                <span className="sm:hidden">Plan</span>
               </button>
-
-              {onOpenDataTools && (
-                <button
-                  onClick={onOpenDataTools}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50"
-                  aria-label="Veri araçları"
-                >
-                  {/* opsiyonel veri aracı butonun varsa ikon ekleyebilirsin */}
-                  <span className="text-sm">Veri</span>
-                </button>
-              )}
 
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 bg-white/60 backdrop-blur-sm px-3 py-2 rounded-xl hover:bg-white/80 transition-all duration-200"
                 aria-label="Çıkış yap"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="text-sm">Çıkış</span>
+                <span className="hidden sm:inline text-sm">Çıkış</span>
               </button>
             </div>
           </div>
@@ -107,15 +123,14 @@ const Layout: React.FC<LayoutProps> = ({
       </header>
 
       {/* Navigation */}
-      {/* ÖNEMLİ: key ile membership değişince nav yeniden oluşturulsun (guard anında yansısın) */}
       <nav 
         key={`${user?.id}-${user?.membershipType}`} 
-        className="bg-white shadow-sm"
+        className="bg-white/40 backdrop-blur-xl border-b border-white/20"
         role="navigation"
         aria-label="Ana navigasyon"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const allowed = tab.guard(user?.membershipType);
@@ -124,18 +139,31 @@ const Layout: React.FC<LayoutProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => allowed && onTabChange(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    active ? 'border-blue-500 text-blue-600'
-                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } ${!allowed ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  className={`relative flex items-center space-x-2 py-4 px-6 font-medium text-sm transition-all duration-200 rounded-t-xl ${
+                    active 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg transform -translate-y-1'
+                      : allowed
+                        ? 'text-gray-700 hover:text-purple-600 hover:bg-white/60 backdrop-blur-sm'
+                        : 'text-gray-400 cursor-not-allowed opacity-50'
+                  }`}
                   disabled={!allowed}
                   aria-current={active ? 'page' : undefined}
-                  title={!allowed ? 'Bu sekme Advanced üyelerde aktif' : undefined}
+                  title={!allowed ? `Bu sekme ${tab.guard('Pro') ? 'Pro' : 'Advanced'} üyelerde aktif` : undefined}
                   role="tab"
                   aria-selected={active}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>
+                  
+                  {!allowed && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                      <Crown className="h-2 w-2 text-white" />
+                    </div>
+                  )}
+                  
+                  {active && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white rounded-full"></div>
+                  )}
                 </button>
               );
             })}
@@ -143,9 +171,9 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
       </nav>
 
-      {/* Main */}
+      {/* Main Content */}
       <main 
-        className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8"
+        className="flex-1"
         role="main"
         aria-label="Ana içerik"
       >
