@@ -143,7 +143,7 @@ const InstallationPanel: React.FC<{
               <span className="font-medium text-blue-900">Hızlı Kurulum</span>
             </div>
             <p className="text-sm text-blue-800">
-              Tek satırlık kodu sitenizin <code className="bg-blue-100 px-2 py-1 rounded text-xs"><head></code> bölümüne ekleyin.
+              Tek satırlık kodu sitenizin <code className="bg-blue-100 px-2 py-1 rounded text-xs">&lt;head&gt;</code> bölümüne ekleyin.
             </p>
           </div>
           
