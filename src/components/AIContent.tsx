@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/database';
 import type { AIContent as AIContentType } from '../types';
@@ -269,7 +270,7 @@ const AIContent: React.FC = () => {
       setGeneratedContent(content);
 
       const newContent: AIContentType = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         userId: user.id,
         platform,
         prompt,
@@ -285,7 +286,7 @@ const AIContent: React.FC = () => {
       setGeneratedContent(fallbackContent);
       
       const newContent: AIContentType = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         userId: user.id,
         platform,
         prompt,
